@@ -3,26 +3,128 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-  <title>동물 & 공룡 서식지 탐험</title>
+  <title>동물 & 공룡 스티커 도감</title>
   <style>
-    * { box-sizing: border-box; user-select: none; -webkit-user-select: none; touch-action: none; }
-    body { margin: 0; padding: 0; overflow: hidden; background: #1a1a1a; font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; text-align: center; }
-    .screen { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-    .btn-container { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; z-index: 10; }
-    .game-btn { font-size: 1.8rem; padding: 18px 36px; border: none; border-radius: 20px; cursor: pointer; background: #ffe066; font-weight: bold; box-shadow: 0 6px #d4a000; }
-    .game-btn:active { transform: translateY(4px); box-shadow: 0 2px #d4a000; }
-    canvas { display: block; }
-    
-    #backBtn { position: absolute; top: 15px; left: 15px; z-index: 50; font-size: 1.1rem; padding: 10px 18px; border-radius: 12px; border: none; background: rgba(255,255,255,0.95); font-weight: bold; cursor: pointer; display: none; box-shadow: 0 3px 6px rgba(0,0,0,0.3); }
+    * { box-sizing: border-box; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
+    body {
+      margin: 0;
+      padding: 0;
+      background: #f1f2f6;
+      font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+      color: #2f3542;
+    }
 
-    /* 3x3 드래그 퍼즐 창 */
-    #puzzleOverlay { display: none; background: rgba(0, 0, 0, 0.92); color: white; z-index: 100; flex-direction: column; justify-content: center; align-items: center; }
-    
+    /* 상단 헤더 & 카테고리 탭 */
+    header {
+      position: sticky;
+      top: 0;
+      background: #ffffff;
+      padding: 12px 10px 8px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+      z-index: 50;
+      text-align: center;
+    }
+    h1 {
+      font-size: 1.4rem;
+      margin: 0 0 10px 0;
+      color: #2ed573;
+      text-shadow: 1px 1px 0 #a4b0be;
+    }
+    .tab-bar {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 5px;
+      justify-content: center;
+      -webkit-overflow-scrolling: touch;
+    }
+    .tab-btn {
+      flex: 0 0 auto;
+      font-size: 0.95rem;
+      font-weight: bold;
+      padding: 10px 16px;
+      border: 2px solid transparent;
+      border-radius: 25px;
+      background: #e4e7eb;
+      color: #57606f;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      background: #ff4757;
+      color: #ffffff;
+      border-color: #ff6b81;
+      box-shadow: 0 4px 10px rgba(255, 71, 87, 0.35);
+      transform: scale(1.05);
+    }
+
+    /* 도감 카드 그리드 */
+    .grid-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+      gap: 15px;
+      padding: 15px;
+      max-width: 900px;
+      margin: 0 auto;
+      padding-bottom: 60px;
+    }
+    .card {
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.06);
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      border: 3px solid #f1f2f6;
+    }
+    .card:active {
+      transform: scale(0.94);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .card-img-wrap {
+      width: 105px;
+      height: 105px;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #f8f9fa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 0 8px rgba(0,0,0,0.05);
+    }
+    .card-img-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .card-name {
+      font-size: 1.05rem;
+      font-weight: bold;
+      margin-top: 10px;
+      color: #2f3542;
+    }
+
+    /* 3x3 터치 드래그 퍼즐 모달 */
+    #puzzleOverlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(0, 0, 0, 0.88);
+      z-index: 100;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      touch-action: none;
+    }
     #closePuzzleBtn {
       position: absolute;
-      top: 15px;
-      right: 15px;
-      font-size: 1.2rem;
+      top: 20px;
+      right: 20px;
+      font-size: 1.1rem;
       padding: 8px 18px;
       border-radius: 20px;
       border: none;
@@ -30,24 +132,23 @@
       color: white;
       font-weight: bold;
       cursor: pointer;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
     }
     #closePuzzleBtn:active { transform: scale(0.95); }
 
-    .puzzle-header h2 { font-size: 2.2rem; margin: 0 0 5px 0; color: #fbc531; }
-    .puzzle-header p { font-size: 1.1rem; margin: 0 0 15px 0; color: #dcdde1; }
+    .puzzle-header h2 { font-size: 2rem; margin: 0 0 5px 0; color: #fbc531; text-align: center; }
+    .puzzle-header p { font-size: 1rem; margin: 0 0 15px 0; color: #dcdde1; text-align: center; }
     
     #puzzleBoard {
       width: 306px;
       height: 306px;
       position: relative;
-      background: #2f3640;
+      background: #2f3542;
       border: 4px solid #fbc531;
-      border-radius: 12px;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.7);
+      border-radius: 14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
       touch-action: none;
     }
-    
     .tile {
       width: 100px;
       height: 100px;
@@ -64,263 +165,223 @@
       cursor: grabbing;
       z-index: 999 !important;
       transform: scale(1.08);
-      box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+      box-shadow: 0 12px 25px rgba(0,0,0,0.7);
       transition: none !important;
     }
     #puzzleCompleteMsg {
-      font-size: 1.8rem;
+      font-size: 1.6rem;
       color: #2ed573;
       font-weight: bold;
       margin-top: 15px;
       display: none;
+      text-align: center;
     }
   </style>
 </head>
 <body>
 
-  <button id="backBtn" onclick="goToStart()">🏠 처음으로</button>
-
-  <!-- 1단계: 육지 / 바다 선택 -->
-  <div id="screen1" class="screen" style="background: linear-gradient(135deg, #74b9ff, #55efc4);">
-    <h1 style="font-size: 2.3rem; color: #2d3436; margin-bottom: 30px;">어디로 탐험을 떠날까?</h1>
-    <div class="btn-container">
-      <button class="game-btn" onclick="selectTerrain('land')">🏞️ 넓은 육지</button>
-      <button class="game-btn" onclick="selectTerrain('sea')">🌊 푸른 바다</button>
+  <header>
+    <h1>✨ 동물 & 공룡 스티커 도감 ✨</h1>
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchCategory('land-animal', this)">🦁 육지 동물</button>
+      <button class="tab-btn" onclick="switchCategory('land-dino', this)">🦖 육지 공룡</button>
+      <button class="tab-btn" onclick="switchCategory('sea-animal', this)">🐬 바다 동물</button>
+      <button class="tab-btn" onclick="switchCategory('sea-dino', this)">🐊 바다 고생물</button>
     </div>
-  </div>
+  </header>
 
-  <!-- 2단계: 동물 / 공룡 선택 -->
-  <div id="screen2" class="screen" style="background: linear-gradient(135deg, #ffeaa7, #fab1a0); display: none;">
-    <h1 style="font-size: 2.3rem; color: #2d3436; margin-bottom: 30px;">누구를 만나러 갈까?</h1>
-    <div class="btn-container">
-      <button class="game-btn" onclick="selectCategory('animal')">🦁 실제 동물</button>
-      <button class="game-btn" onclick="selectCategory('dino')">🦖 거대 공룡</button>
-    </div>
-  </div>
+  <main class="grid-container" id="cardGrid"></main>
 
-  <!-- 3단계: 서식지 캔버스 화면 -->
-  <canvas id="gameCanvas" style="display: none;"></canvas>
-
-  <!-- 4단계: 3x3 드래그 퍼즐 창 -->
-  <div id="puzzleOverlay" class="screen">
+  <!-- 3x3 드래그 퍼즐 모달 -->
+  <div id="puzzleOverlay">
     <button id="closePuzzleBtn" onclick="closePuzzle()">✕ 닫기</button>
     <div class="puzzle-header">
       <h2 id="puzzleTitle">동물 이름</h2>
-      <p id="puzzleSubtitle">조각을 손가락으로 끌어서 제자리에 맞춰보세요!</p>
+      <p>조각을 손으로 끌어서 퍼즐을 맞춰봐요!</p>
     </div>
     <div id="puzzleBoard"></div>
-    <div id="puzzleCompleteMsg">🎉 완성! 참 잘했어요! 🎉</div>
+    <div id="puzzleCompleteMsg">🎉 정답! 참 잘했어요! 🎉</div>
   </div>
 
   <script>
-    let terrain = '', category = '';
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    let entities = [];
-    let habitats = [];
-    let currentSelected = null;
-    let animId = null;
-
-    // 깃허브에 올린 파일 경로 (파일이 없으면 대체 온라인 사진 로딩)
-    const CREATURE_IMAGES = {
-      lion: ["lion.jpg", "https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=400&q=80"],
-      giraffe: ["giraffe.jpg", "https://images.unsplash.com/photo-1538121669313-d150b4001ab9?w=400&q=80"],
-      monkey: ["monkey.jpg", "https://images.unsplash.com/photo-1540573133985-87b6da6d54a9?w=400&q=80"],
-      trex: ["trex.jpg", "https://images.unsplash.com/photo-1568832359672-e36cf5d74f54?w=400&q=80"],
-      trike: ["trike.jpg", "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&q=80"],
-      ptera: ["ptera.jpg", "https://images.unsplash.com/photo-1525869916826-972885c91c1e?w=400&q=80"],
-      dolphin: ["dolphin.jpg", "https://images.unsplash.com/photo-1607153333879-c174d265f1d2?w=400&q=80"],
-      turtle: ["turtle.jpg", "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&q=80"],
-      whale: ["whale.jpg", "https://images.unsplash.com/photo-1568430467505-5925a74e5028?w=400&q=80"],
-      plesio: ["plesio.jpg", "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&q=80"],
-      mosa: ["mosa.jpg", "https://images.unsplash.com/photo-1570481662006-a3a1374699e8?w=400&q=80"]
+    // 1. 도감 데이터 정의 (총 30종)
+    const CREATURE_DATA = {
+      'land-animal': [
+        { id: 'lion', name: '사자', color: '#e67e22', desc: '용맹한 백수의 왕 사자!' },
+        { id: 'tiger', name: '호랑이', color: '#d35400', desc: '줄무늬가 멋진 어흥 호랑이!' },
+        { id: 'giraffe', name: '기린', color: '#f1c40f', desc: '목이 아주 긴 얼룩덜룩 기린!' },
+        { id: 'elephant', name: '코끼리', color: '#95a5a6', desc: '코가 손인 커다란 코끼리!' },
+        { id: 'zebra', name: '얼룩말', color: '#34495e', desc: '검은색 흰색 줄무늬 얼룩말!' },
+        { id: 'panda', name: '판다', color: '#2c3e50', desc: '대나무를 좋아하는 귀여운 판다!' },
+        { id: 'monkey', name: '원숭이', color: '#795548', desc: '나무를 잘 타는 장난꾸러기 원숭이!' },
+        { id: 'bear', name: '곰', color: '#5d4037', desc: '꿀을 좋아하는 든든한 곰!' }
+      ],
+      'land-dino': [
+        { id: 't_rex', name: '티라노사우루스', color: '#c0392b', desc: '가장 무시무시한 공룡의 제왕 티라노사우루스!' },
+        { id: 'trike', name: '트리케라톱스', color: '#27ae60', desc: '뿔이 세 개 달린 멋진 트리케라톱스!' },
+        { id: 'brachio', name: '브라키오사우루스', color: '#16a085', desc: '키가 아주아주 큰 거인 브라키오사우루스!' },
+        { id: 'stego', name: '스테고사우루스', color: '#d35400', desc: '등에 골판이 뾰족뾰족 스테고사우루스!' },
+        { id: 'ptera', name: '프테라노돈', color: '#e67e22', desc: '하늘을 훨훨 나는 익룡 프테라노돈!' },
+        { id: 'ankyl', name: '안킬로사우루스', color: '#7f8c8d', desc: '꼬리에 철퇴가 달린 갑옷공룡 안킬로사우루스!' },
+        { id: 'raptor', name: '벨로키랍토르', color: '#8e44ad', desc: '달리기가 엄청 빠른 사냥꾼 벨로키랍토르!' },
+        { id: 'spino', name: '스피노사우루스', color: '#2980b9', desc: '등에 커다란 돛이 달린 거대공룡 스피노사우루스!' }
+      ],
+      'sea-animal': [
+        { id: 'dolphin', name: '돌고래', color: '#0984e3', desc: '점프를 잘하는 똑똑한 돌고래!' },
+        { id: 'whale', name: '고래', color: '#182C61', desc: '바다에서 가장 큰 대왕고래!' },
+        { id: 'shark', name: '상어', color: '#3867d6', desc: '날카로운 이빨을 가진 바다의 사냥꾼 상어!' },
+        { id: 'turtle', name: '바다거북', color: '#10ac84', desc: '바닷속을 천천히 헤엄치는 바다거북!' },
+        { id: 'octopus', name: '문어', color: '#eb3b5a', desc: '다리가 여덟 개 달린 똑똑한 문어!' },
+        { id: 'penguin', name: '펭귄', color: '#2f3542', desc: '뒤뚱뒤뚱 귀여운 턱시도 펭귄!' },
+        { id: 'seal', name: '물개', color: '#778ca3', desc: '박수를 짝짝 치는 매끈한 물개!' },
+        { id: 'seahorse', name: '해마', color: '#fa8231', desc: '꼬리로 해초를 꽉 잡는 아기 해마!' }
+      ],
+      'sea-dino': [
+        { id: 'mosa', name: '모사사우루스', color: '#1e272e', desc: '고대 바다의 무시무시한 지배자 모사사우루스!' },
+        { id: 'plesio', name: '플레시오사우루스', color: '#0abde3', desc: '목이 긴 신비로운 바다파충류 플레시오사우루스!' },
+        { id: 'megalodon', name: '메갈로돈', color: '#4b6584', desc: '집채만큼 거대한 고대 대형상어 메갈로돈!' },
+        { id: 'ichthyo', name: '익티오사우루스', color: '#20bf6b', desc: '돌고래를 쏙 빼닮은 고대 어룡 익티오사우루스!' },
+        { id: 'ammonite', name: '암모나이트', color: '#d1ccc0', desc: '동글동글 소용돌이 껍데기를 가진 암모나이트!' },
+        { id: 'trilobite', name: '삼엽충', color: '#a5b1c2', desc: '바다 밑바닥을 기어다니던 고대 바다 친구 삼엽충!' }
+      ]
     };
 
-    const loadedImgs = {};
-    const loadedUrls = {};
+    // 2. 100% 로딩 보장 캔버스 그래픽 생성기
+    const generatedUrls = {};
+    function createArtwork(item) {
+      const c = document.createElement('canvas');
+      c.width = 300; c.height = 300;
+      const g = c.getContext('2d');
 
-    // 이미지 로드 시 로컬 파일 -> 온라인 URL 단계적 시도
-    for (let key in CREATURE_IMAGES) {
-      const img = new Image();
-      const [localPath, fallbackUrl] = CREATURE_IMAGES[key];
-      
-      img.onload = () => {
-        loadedUrls[key] = img.src;
-      };
-      img.onerror = () => {
-        if (img.src.indexOf(fallbackUrl) === -1) {
-          img.src = fallbackUrl;
+      // 배경
+      g.fillStyle = item.color;
+      g.fillRect(0, 0, 300, 300);
+
+      // 동물/공룡별 정밀 드로잉
+      g.save();
+      if (item.id === 'lion') {
+        g.fillStyle = '#6e2c00'; g.beginPath(); g.arc(150, 150, 120, 0, Math.PI*2); g.fill();
+        g.fillStyle = '#f39c12'; g.beginPath(); g.ellipse(150, 155, 75, 65, 0, 0, Math.PI*2); g.fill();
+        g.fillStyle = '#fdebd0'; g.beginPath(); g.ellipse(150, 185, 40, 30, 0, 0, Math.PI*2); g.fill();
+        g.fillStyle = '#000'; g.beginPath(); g.arc(120, 140, 10, 0, Math.PI*2); g.arc(180, 140, 10, 0, Math.PI*2); g.fill();
+        g.fillStyle = '#922b21'; g.beginPath(); g.moveTo(140, 170); g.lineTo(160, 170); g.lineTo(150, 182); g.fill();
+      } else if (item.id === 'tiger') {
+        g.fillStyle = '#e67e22'; g.beginPath(); g.arc(150, 150, 95, 0, Math.PI*2); g.fill();
+        g.fillStyle = '#111';
+        for(let i=-60; i<=60; i+=30) {
+          g.beginPath(); g.moveTo(150+i, 70); g.lineTo(150+i+10, 110); g.lineTo(150+i-10, 110); g.fill();
         }
-      };
-      img.src = localPath;
-      loadedImgs[key] = img;
-      loadedUrls[key] = localPath;
-    }
-
-    function resize() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      if (terrain && category) initHabitatAndEntities();
-    }
-    window.addEventListener('resize', resize);
-    resize();
-
-    function goToStart() {
-      if (animId) cancelAnimationFrame(animId);
-      document.getElementById('backBtn').style.display = 'none';
-      canvas.style.display = 'none';
-      document.getElementById('puzzleOverlay').style.display = 'none';
-      document.getElementById('screen2').style.display = 'none';
-      document.getElementById('screen1').style.display = 'flex';
-      terrain = ''; category = '';
-    }
-
-    function selectTerrain(t) {
-      terrain = t;
-      document.getElementById('screen1').style.display = 'none';
-      document.getElementById('screen2').style.display = 'flex';
-      speak(t === 'land' ? '넓은 육지로 가요!' : '신비한 바다로 가요!');
-    }
-
-    function selectCategory(c) {
-      category = c;
-      document.getElementById('screen2').style.display = 'none';
-      canvas.style.display = 'block';
-      document.getElementById('backBtn').style.display = 'block';
-      speak(c === 'animal' ? '동물들을 찾아봐요!' : '공룡을 찾아봐요!');
-      initHabitatAndEntities();
-      if (animId) cancelAnimationFrame(animId);
-      gameLoop();
-    }
-
-    function initHabitatAndEntities() {
-      const w = canvas.width, h = canvas.height;
-      const zoneH = h / 3;
-
-      if (terrain === 'land' && category === 'animal') {
-        habitats = [
-          { name: '🌾 사바나 초원 (기린)', grad: ['#e4c373', '#cf9b3a'], y: 0, h: zoneH },
-          { name: '⛰️ 바위 언덕 (사자)', grad: ['#bcaaa4', '#8d6e63'], y: zoneH, h: zoneH },
-          { name: '🌴 울창한 정글 (원숭이)', grad: ['#81c784', '#388e3c'], y: zoneH * 2, h: zoneH }
-        ];
-        entities = [
-          { name: '기린', key: 'giraffe', x: w * 0.5, y: zoneH * 0.5, vx: 0.6, vy: 0.2, minX: 60, maxX: w - 60, minY: 60, maxY: zoneH - 60 },
-          { name: '사자', key: 'lion', x: w * 0.4, y: zoneH * 1.5, vx: -0.5, vy: 0.3, minX: 60, maxX: w - 60, minY: zoneH + 60, maxY: zoneH * 2 - 60 },
-          { name: '원숭이', key: 'monkey', x: w * 0.6, y: zoneH * 2.5, vx: 0.8, vy: -0.4, minX: 60, maxX: w - 60, minY: zoneH * 2 + 60, maxY: h - 60 }
-        ];
-      } else if (terrain === 'land' && category === 'dino') {
-        habitats = [
-          { name: '🌋 화산 상공 (프테라노돈)', grad: ['#e17055', '#d63031'], y: 0, h: zoneH },
-          { name: '🌲 백악기 숲 (티라노사우루스)', grad: ['#2ed573', '#1e8449'], y: zoneH, h: zoneH },
-          { name: '🏜️ 붉은 평원 (트리케라톱스)', grad: ['#e58e26', '#b71540'], y: zoneH * 2, h: zoneH }
-        ];
-        entities = [
-          { name: '프테라노돈', key: 'ptera', x: w * 0.3, y: zoneH * 0.5, vx: 0.9, vy: 0.3, minX: 60, maxX: w - 60, minY: 60, maxY: zoneH - 60 },
-          { name: '티라노사우루스', key: 'trex', x: w * 0.5, y: zoneH * 1.5, vx: -0.6, vy: 0.2, minX: 60, maxX: w - 60, minY: zoneH + 60, maxY: zoneH * 2 - 60 },
-          { name: '트리케라톱스', key: 'trike', x: w * 0.7, y: zoneH * 2.5, vx: 0.5, vy: -0.3, minX: 60, maxX: w - 60, minY: zoneH * 2 + 60, maxY: h - 60 }
-        ];
-      } else if (terrain === 'sea' && category === 'animal') {
-        habitats = [
-          { name: '🏖️ 맑은 산호초 (돌고래)', grad: ['#74b9ff', '#0984e3'], y: 0, h: zoneH },
-          { name: '🌊 푸른 바다 (바다거북)', grad: ['#00cec9', '#0097e6'], y: zoneH, h: zoneH },
-          { name: '🌌 깊은 심해 (고래)', grad: ['#192a56', '#0c2461'], y: zoneH * 2, h: zoneH }
-        ];
-        entities = [
-          { name: '돌고래', key: 'dolphin', x: w * 0.3, y: zoneH * 0.5, vx: 0.8, vy: 0.3, minX: 60, maxX: w - 60, minY: 60, maxY: zoneH - 60 },
-          { name: '바다거북', key: 'turtle', x: w * 0.7, y: zoneH * 1.5, vx: -0.4, vy: 0.2, minX: 60, maxX: w - 60, minY: zoneH + 60, maxY: zoneH * 2 - 60 },
-          { name: '고래', key: 'whale', x: w * 0.5, y: zoneH * 2.5, vx: 0.6, vy: -0.2, minX: 60, maxX: w - 60, minY: zoneH * 2 + 60, maxY: h - 60 }
-        ];
+        g.fillStyle = '#fff'; g.beginPath(); g.ellipse(150, 180, 45, 30, 0, 0, Math.PI*2); g.fill();
+        g.fillStyle = '#000'; g.beginPath(); g.arc(115, 140, 9, 0, Math.PI*2); g.arc(185, 140, 9, 0, Math.PI*2); g.fill();
+      } else if (item.id === 'giraffe') {
+        g.fillStyle = '#f1c40f'; g.fillRect(120, 100, 60, 200);
+        g.beginPath(); g.ellipse(150, 100, 45, 60, 0, 0, Math.PI*2); g.fill();
+        g.fillStyle = '#a0522d';
+        g.beginPath(); g.arc(135, 45, 10, 0, Math.PI*2); g.arc(165, 45, 10, 0, Math.PI*2); g.fill();
+        g.fillRect(130, 140, 40, 30); g.fillRect(125, 200, 50, 40);
+        g.fillStyle = '#000'; g.beginPath(); g.arc(130, 90, 8, 0, Math.PI*2); g.arc(170, 90, 8, 0, Math.PI*2); g.fill();
+      } else if (item.id === 'elephant') {
+        g.fillStyle = '#7f8c8d'; g.beginPath(); g.arc(150, 140, 90, 0, Math.PI*2); g.fill();
+        g.beginPath(); g.arc(70, 130, 45, 0, Math.PI*2); g.arc(230, 130, 45, 0, Math.PI*2); g.fill(); // 귀
+        g.fillRect(135, 160, 30, 110); // 코
+        g.fillStyle = '#fff'; g.beginPath(); g.moveTo(125, 190); g.lineTo(105, 230); g.lineTo(130, 210); g.fill();
+        g.beginPath(); g.moveTo(175, 190); g.lineTo(195, 230); g.lineTo(170, 210); g.fill(); // 상아
+        g.fillStyle = '#000'; g.beginPath(); g.arc(115, 130, 7, 0, Math.PI*2); g.arc(185, 130, 7, 0, Math.PI*2); g.fill();
+      } else if (item.id === 't_rex') {
+        g.fillStyle = '#27ae60';
+        g.beginPath(); g.moveTo(70, 190); g.quadraticCurveTo(60, 90, 160, 80); g.quadraticCurveTo(260, 75, 260, 140); g.quadraticCurveTo(260, 185, 170, 185); g.closePath(); g.fill();
+        g.fillStyle = '#fff';
+        for(let x=150; x<250; x+=16) {
+          g.beginPath(); g.moveTo(x, 145); g.lineTo(x+8, 162); g.lineTo(x+16, 145); g.fill();
+        }
+        g.fillStyle = '#f1c40f'; g.beginPath(); g.arc(185, 110, 11, 0, Math.PI*2); g.fill();
+        g.fillStyle = '#000'; g.beginPath(); g.arc(185, 110, 5, 0, Math.PI*2); g.fill();
+      } else if (item.id === 'trike') {
+        g.fillStyle = '#1e8449'; g.beginPath(); g.arc(150, 140, 105, 0, Math.PI*2); g.fill();
+        g.fillStyle = '#2ecc71'; g.beginPath(); g.ellipse(150, 175, 70, 60, 0, 0, Math.PI*2); g.fill();
+        g.fillStyle = '#ecf0f1';
+        g.beginPath(); g.moveTo(110, 130); g.lineTo(80, 50); g.lineTo(130, 115); g.fill();
+        g.beginPath(); g.moveTo(190, 130); g.lineTo(220, 50); g.lineTo(170, 115); g.fill();
+        g.beginPath(); g.moveTo(145, 190); g.lineTo(150, 145); g.lineTo(155, 190); g.fill();
+        g.fillStyle = '#000'; g.beginPath(); g.arc(115, 155, 8, 0, Math.PI*2); g.arc(185, 155, 8, 0, Math.PI*2); g.fill();
+      } else if (item.id === 'dolphin') {
+        g.fillStyle = '#0984e3';
+        g.beginPath(); g.moveTo(40, 180); g.quadraticCurveTo(120, 60, 240, 120); g.quadraticCurveTo(270, 140, 250, 160); g.quadraticCurveTo(160, 195, 60, 185); g.closePath(); g.fill();
+        g.fillStyle = '#74b9ff'; g.beginPath(); g.ellipse(150, 165, 65, 18, -0.2, 0, Math.PI*2); g.fill();
+        g.fillStyle = '#fff'; g.beginPath(); g.arc(205, 128, 8, 0, Math.PI*2); g.fill();
+        g.fillStyle = '#000'; g.beginPath(); g.arc(206, 128, 4, 0, Math.PI*2); g.fill();
+      } else if (item.id === 'whale') {
+        g.fillStyle = '#1e3799'; g.beginPath(); g.ellipse(140, 155, 110, 65, 0, 0, Math.PI*2); g.fill();
+        g.beginPath(); g.moveTo(40, 155); g.lineTo(15, 110); g.lineTo(25, 155); g.lineTo(15, 200); g.fill();
+        g.fillStyle = '#fff'; g.beginPath(); g.arc(215, 145, 8, 0, Math.PI*2); g.fill();
+        g.fillStyle = '#000'; g.beginPath(); g.arc(217, 145, 4, 0, Math.PI*2); g.fill();
+      } else if (item.id === 'mosa') {
+        g.fillStyle = '#38ada9';
+        g.beginPath(); g.moveTo(40, 150); g.quadraticCurveTo(130, 85, 260, 135); g.quadraticCurveTo(210, 195, 60, 165); g.closePath(); g.fill();
+        g.fillStyle = '#fff';
+        for(let x=215; x<255; x+=8) {
+          g.beginPath(); g.moveTo(x, 130); g.lineTo(x+4, 138); g.lineTo(x+8, 130); g.fill();
+        }
+        g.fillStyle = '#f1c40f'; g.beginPath(); g.arc(220, 122, 7, 0, Math.PI*2); g.fill();
+        g.fillStyle = '#000'; g.beginPath(); g.arc(220, 122, 3, 0, Math.PI*2); g.fill();
       } else {
-        habitats = [
-          { name: '☀️ 얕은 고대 바다 (플레시오사우루스)', grad: ['#00d2d3', '#2e86de'], y: 0, h: zoneH * 1.5 },
-          { name: '🌑 깊은 해저 계곡 (모사사우루스)', grad: ['#2e86de', '#0c2461'], y: zoneH * 1.5, h: zoneH * 1.5 }
-        ];
-        entities = [
-          { name: '플레시오사우루스', key: 'plesio', x: w * 0.4, y: zoneH * 0.75, vx: 0.7, vy: 0.3, minX: 60, maxX: w - 60, minY: 60, maxY: zoneH * 1.5 - 60 },
-          { name: '모사사우루스', key: 'mosa', x: w * 0.6, y: zoneH * 2.2, vx: -0.7, vy: -0.3, minX: 60, maxX: w - 60, minY: zoneH * 1.5 + 60, maxY: h - 60 }
-        ];
+        // 공통/기타 동물 고유 심볼 렌더링
+        g.fillStyle = '#ffffff';
+        g.beginPath(); g.arc(150, 150, 85, 0, Math.PI*2); g.fill();
+        g.fillStyle = item.color;
+        g.beginPath(); g.arc(150, 150, 75, 0, Math.PI*2); g.fill();
+        g.fillStyle = '#ffffff';
+        g.font = 'bold 36px sans-serif';
+        g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.fillText(item.name.substring(0, 2), 150, 150);
       }
+      g.restore();
+
+      const dataUrl = c.toDataURL('image/png');
+      generatedUrls[item.id] = dataUrl;
+      return dataUrl;
     }
 
-    function gameLoop() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // 3. 탭 전환 및 카드 렌더링
+    let currentCategory = 'land-animal';
+    let currentSelected = null;
 
-      habitats.forEach(hab => {
-        const grd = ctx.createLinearGradient(0, hab.y, 0, hab.y + hab.h);
-        grd.addColorStop(0, hab.grad[0]);
-        grd.addColorStop(1, hab.grad[1]);
-        ctx.fillStyle = grd;
-        ctx.fillRect(0, hab.y, canvas.width, hab.h);
+    function renderCards() {
+      const grid = document.getElementById('cardGrid');
+      grid.innerHTML = '';
+      const list = CREATURE_DATA[currentCategory];
 
-        ctx.strokeStyle = 'rgba(255,255,255,0.35)';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(0, hab.y);
-        ctx.lineTo(canvas.width, hab.y);
-        ctx.stroke();
-
-        ctx.fillStyle = '#ffffff';
-        ctx.shadowColor = 'rgba(0,0,0,0.5)';
-        ctx.shadowBlur = 4;
-        ctx.font = 'bold 18px Apple SD Gothic Neo, sans-serif';
-        ctx.textAlign = 'left';
-        ctx.fillText(hab.name, 20, hab.y + 32);
-        ctx.shadowBlur = 0;
+      list.forEach(item => {
+        const url = generatedUrls[item.id] || createArtwork(item);
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <div class="card-img-wrap">
+            <img src="${url}" alt="${item.name}">
+          </div>
+          <div class="card-name">${item.name}</div>
+        `;
+        card.onclick = () => openPuzzle(item);
+        grid.appendChild(card);
       });
-
-      entities.forEach(e => {
-        e.x += e.vx;
-        e.y += e.vy;
-
-        if (e.x < e.minX || e.x > e.maxX) e.vx *= -1;
-        if (e.y < e.minY || e.y > e.maxY) e.vy *= -1;
-
-        const img = loadedImgs[e.key];
-        const r = 48;
-
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(e.x, e.y, r, 0, Math.PI * 2);
-        ctx.closePath();
-
-        ctx.lineWidth = 4;
-        ctx.strokeStyle = '#ffffff';
-        ctx.stroke();
-        ctx.clip();
-
-        if (img && img.complete && img.naturalWidth > 0) {
-          ctx.drawImage(img, e.x - r, e.y - r, r * 2, r * 2);
-        } else {
-          ctx.fillStyle = '#34495e';
-          ctx.fill();
-        }
-        ctx.restore();
-
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 16px Apple SD Gothic Neo, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.shadowColor = 'rgba(0,0,0,0.8)';
-        ctx.shadowBlur = 4;
-        ctx.fillText(e.name, e.x, e.y + r + 20);
-        ctx.shadowBlur = 0;
-      });
-
-      animId = requestAnimationFrame(gameLoop);
     }
 
-    canvas.addEventListener('pointerdown', (evt) => {
-      const rect = canvas.getBoundingClientRect();
-      const clickX = evt.clientX - rect.left;
-      const clickY = evt.clientY - rect.top;
+    function switchCategory(cat, btn) {
+      currentCategory = cat;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderCards();
+      
+      const catNames = {
+        'land-animal': '육지 동물들을 만나봐요!',
+        'land-dino': '거대한 육지 공룡들을 만나봐요!',
+        'sea-animal': '신비한 바다 동물들을 만나봐요!',
+        'sea-dino': '고대 바다 고생물들을 만나봐요!'
+      };
+      speak(catNames[cat]);
+    }
 
-      entities.forEach(e => {
-        const dist = Math.hypot(e.x - clickX, e.y - clickY);
-        if (dist < 60) {
-          openDragPuzzle(e);
-        }
-      });
-    });
-
+    // 음성 출력 (TTS)
     function speak(text) {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
@@ -331,27 +392,28 @@
       }
     }
 
-    function closePuzzle() {
-      document.getElementById('puzzleOverlay').style.display = 'none';
-      currentSelected = null;
-    }
-
+    // 4. 3x3 터치 드래그 퍼즐 시스템
     let positions = [];
     let isDragging = false;
     let dragEl = null;
     let dragSlotIdx = -1;
     let startX = 0, startY = 0, origLeft = 0, origTop = 0;
 
-    function openDragPuzzle(entity) {
-      currentSelected = entity;
-      speak(`이 동물은 ${entity.name}! 퍼즐을 손으로 끌어서 맞춰봐요!`);
-      document.getElementById('puzzleTitle').innerText = `${entity.name} 맞추기`;
+    function openPuzzle(item) {
+      currentSelected = item;
+      speak(`${item.name}! ${item.desc}`);
+      document.getElementById('puzzleTitle').innerText = `${item.name} 퍼즐`;
       document.getElementById('puzzleCompleteMsg').style.display = 'none';
       document.getElementById('puzzleOverlay').style.display = 'flex';
 
       positions = [0, 1, 2, 3, 4, 5, 6, 7, 8];
       shuffle(positions);
-      renderDragBoard();
+      renderPuzzleBoard();
+    }
+
+    function closePuzzle() {
+      document.getElementById('puzzleOverlay').style.display = 'none';
+      currentSelected = null;
     }
 
     function shuffle(arr) {
@@ -370,17 +432,16 @@
       return { x: col * 102, y: row * 102 };
     }
 
-    function renderDragBoard() {
+    function renderPuzzleBoard() {
       const board = document.getElementById('puzzleBoard');
       board.innerHTML = '';
-      const photoUrl = loadedUrls[currentSelected.key] || loadedImgs[currentSelected.key].src;
+      const photoUrl = generatedUrls[currentSelected.id];
 
       for (let slot = 0; slot < 9; slot++) {
         const tileId = positions[slot];
         const tile = document.createElement('div');
         tile.className = 'tile';
         tile.dataset.slot = slot;
-        tile.dataset.tileId = tileId;
 
         const origCol = tileId % 3;
         const origRow = Math.floor(tileId / 3);
@@ -475,13 +536,16 @@
     function checkComplete() {
       const isDone = positions.every((val, idx) => val === idx);
       if (isDone) {
-        speak(`정답! 멋진 ${currentSelected.name} 완성! 참 잘했어요!`);
+        speak(`정답! 멋진 ${currentSelected.name} 퍼즐 완성! 참 잘했어요!`);
         document.getElementById('puzzleCompleteMsg').style.display = 'block';
         setTimeout(() => {
           document.getElementById('puzzleOverlay').style.display = 'none';
         }, 2200);
       }
     }
+
+    // 초기 실행
+    renderCards();
   </script>
 </body>
 </html>
