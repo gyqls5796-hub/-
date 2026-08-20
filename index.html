@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
+  <meta name="referrer" content="no-referrer">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
   <title>동물 & 공룡 서식지 탐험</title>
   <style>
@@ -121,208 +122,27 @@
     let currentSelected = null;
     let animId = null;
 
-    // --- 외부 이미지 없이 100% 로딩되는 고해상도 자체 아트 생성기 ---
-    const generatedImages = {};
-    const generatedDataUrls = {};
+    // 실제 동물 & 공룡 실사 사진 (차단 방지 CDN 프록시 적용)
+    const REAL_PHOTO_URLS = {
+      lion: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/7/73/Lion_waiting_in_Namibia.jpg/600px-Lion_waiting_in_Namibia.jpg&w=400&h=400&fit=cover",
+      giraffe: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Giraffe_Mikumi_National_Park.jpg/600px-Giraffe_Mikumi_National_Park.jpg&w=400&h=400&fit=cover",
+      monkey: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/4/43/Bonnet_macaque_%28Macaca_radiata%29_Photograph_By_Shantanu_Kuveskar.jpg/600px-Bonnet_macaque_%28Macaca_radiata%29_Photograph_By_Shantanu_Kuveskar.jpg&w=400&h=400&fit=cover",
+      t_rex: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/9/94/Tyrannosaurus_Rex_Holotype.jpg/600px-Tyrannosaurus_Rex_Holotype.jpg&w=400&h=400&fit=cover",
+      trike: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Triceratops_prorsus_Marsh_1890_%28AMNH_5116%29.jpg/600px-Triceratops_prorsus_Marsh_1890_%28AMNH_5116%29.jpg&w=400&h=400&fit=cover",
+      pteranodon: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Pteranodon_longiceps_at_the_Field_Museum.JPG/600px-Pteranodon_longiceps_at_the_Field_Museum.JPG&w=400&h=400&fit=cover",
+      dolphin: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/1/10/Tursiops_truncatus_01.jpg/600px-Tursiops_truncatus_01.jpg&w=400&h=400&fit=cover",
+      turtle: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Green_Sea_Turtle_grazing_seagrass.jpg/600px-Green_Sea_Turtle_grazing_seagrass.jpg&w=400&h=400&fit=cover",
+      whale: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/5/54/Humpback_Whale_underwater_shot.jpg/600px-Humpback_Whale_underwater_shot.jpg&w=400&h=400&fit=cover",
+      plesio: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/3/30/Plesiosaurus_dolichodeirus_1.jpg/600px-Plesiosaurus_dolichodeirus_1.jpg&w=400&h=400&fit=cover",
+      mosa: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Mosasaurus_hoffmanni_Maastricht.JPG/600px-Mosasaurus_hoffmanni_Maastricht.JPG&w=400&h=400&fit=cover"
+    };
 
-    function generateRealArtwork(key) {
-      const off = document.createElement('canvas');
-      off.width = 300;
-      off.height = 300;
-      const g = off.getContext('2d');
-
-      // 배경 및 사실적 동물 일러스트 렌더링
-      if (key === 'lion') {
-        // 사자
-        g.fillStyle = '#b8860b'; g.fillRect(0, 0, 300, 300);
-        // 갈기
-        g.fillStyle = '#5c2c16';
-        g.beginPath(); g.arc(150, 150, 125, 0, Math.PI*2); g.fill();
-        for(let i=0; i<24; i++) {
-          const ang = (i / 24) * Math.PI * 2;
-          g.fillStyle = i%2===0 ? '#3e1a07' : '#7c3f1d';
-          g.beginPath();
-          g.arc(150 + Math.cos(ang)*110, 150 + Math.sin(ang)*110, 30, 0, Math.PI*2);
-          g.fill();
-        }
-        // 얼굴
-        g.fillStyle = '#e5a65d';
-        g.beginPath(); g.ellipse(150, 155, 75, 65, 0, 0, Math.PI*2); g.fill();
-        // 주둥이
-        g.fillStyle = '#f7dfbe';
-        g.beginPath(); g.ellipse(150, 185, 40, 30, 0, 0, Math.PI*2); g.fill();
-        // 코 & 입
-        g.fillStyle = '#2c1d11';
-        g.beginPath(); g.moveTo(140, 168); g.lineTo(160, 168); g.lineTo(150, 180); g.closePath(); g.fill();
-        g.lineWidth = 3; g.strokeStyle = '#2c1d11';
-        g.beginPath(); g.moveTo(150, 180); g.lineTo(150, 195); g.stroke();
-        // 눈
-        g.fillStyle = '#f39c12';
-        g.beginPath(); g.arc(120, 140, 12, 0, Math.PI*2); g.arc(180, 140, 12, 0, Math.PI*2); g.fill();
-        g.fillStyle = '#000';
-        g.beginPath(); g.arc(120, 140, 7, 0, Math.PI*2); g.arc(180, 140, 7, 0, Math.PI*2); g.fill();
-        g.fillStyle = '#fff';
-        g.beginPath(); g.arc(118, 137, 3, 0, Math.PI*2); g.arc(178, 137, 3, 0, Math.PI*2); g.fill();
-      } else if (key === 'giraffe') {
-        // 기린
-        g.fillStyle = '#87ceeb'; g.fillRect(0, 0, 300, 300);
-        g.fillStyle = '#f5c542';
-        g.beginPath(); g.rect(120, 110, 60, 190); g.fill(); // 목
-        g.beginPath(); g.ellipse(150, 110, 45, 60, 0, 0, Math.PI*2); g.fill(); // 머리
-        // 무늬
-        g.fillStyle = '#a0522d';
-        g.beginPath(); g.roundRect(130, 140, 40, 35, 10); g.fill();
-        g.beginPath(); g.roundRect(125, 190, 50, 40, 12); g.fill();
-        g.beginPath(); g.roundRect(130, 245, 40, 45, 10); g.fill();
-        // 뿔
-        g.fillStyle = '#8b4513';
-        g.lineWidth = 6; g.strokeStyle = '#8b4513';
-        g.beginPath(); g.moveTo(135, 65); g.lineTo(135, 40); g.stroke();
-        g.beginPath(); g.moveTo(165, 65); g.lineTo(165, 40); g.stroke();
-        g.beginPath(); g.arc(135, 38, 8, 0, Math.PI*2); g.arc(165, 38, 8, 0, Math.PI*2); g.fill();
-        // 눈 & 코
-        g.fillStyle = '#222';
-        g.beginPath(); g.arc(130, 95, 8, 0, Math.PI*2); g.arc(170, 95, 8, 0, Math.PI*2); g.fill();
-        g.fillStyle = '#4a2c11';
-        g.beginPath(); g.ellipse(150, 140, 30, 20, 0, 0, Math.PI*2); g.fill();
-      } else if (key === 'monkey') {
-        // 원숭이
-        g.fillStyle = '#27ae60'; g.fillRect(0, 0, 300, 300);
-        g.fillStyle = '#6d4c41';
-        g.beginPath(); g.arc(80, 140, 35, 0, Math.PI*2); g.arc(220, 140, 35, 0, Math.PI*2); g.fill(); // 귀
-        g.beginPath(); g.arc(150, 150, 85, 0, Math.PI*2); g.fill(); // 얼굴 외곽
-        g.fillStyle = '#d7ccc8';
-        g.beginPath(); g.arc(125, 135, 40, 0, Math.PI*2); g.arc(175, 135, 40, 0, Math.PI*2); g.fill();
-        g.beginPath(); g.ellipse(150, 175, 60, 45, 0, 0, Math.PI*2); g.fill();
-        g.fillStyle = '#111';
-        g.beginPath(); g.arc(125, 135, 9, 0, Math.PI*2); g.arc(175, 135, 9, 0, Math.PI*2); g.fill();
-        g.fillStyle = '#5d4037';
-        g.beginPath(); g.arc(142, 170, 5, 0, Math.PI*2); g.arc(158, 170, 5, 0, Math.PI*2); g.fill();
-        g.lineWidth = 4; g.strokeStyle = '#5d4037';
-        g.beginPath(); g.arc(150, 178, 25, 0.2, Math.PI - 0.2); g.stroke();
-      } else if (key === 't_rex') {
-        // 티라노사우루스
-        g.fillStyle = '#78281f'; g.fillRect(0, 0, 300, 300);
-        g.fillStyle = '#2e7d32';
-        g.beginPath();
-        g.moveTo(70, 200); g.quadraticCurveTo(50, 100, 160, 80);
-        g.quadraticCurveTo(260, 75, 260, 140);
-        g.quadraticCurveTo(260, 185, 180, 185);
-        g.quadraticCurveTo(150, 190, 100, 240);
-        g.closePath(); g.fill();
-        // 눈
-        g.fillStyle = '#f39c12'; g.beginPath(); g.arc(185, 110, 12, 0, Math.PI*2); g.fill();
-        g.fillStyle = '#000'; g.beginPath(); g.arc(185, 110, 5, 0, Math.PI*2); g.fill();
-        // 이빨
-        g.fillStyle = '#fff';
-        for(let x=150; x<250; x+=16) {
-          g.beginPath(); g.moveTo(x, 150); g.lineTo(x+8, 168); g.lineTo(x+16, 150); g.fill();
-        }
-      } else if (key === 'trike') {
-        // 트리케라톱스
-        g.fillStyle = '#d35400'; g.fillRect(0, 0, 300, 300);
-        g.fillStyle = '#1e5f38';
-        g.beginPath(); g.arc(150, 140, 100, 0, Math.PI*2); g.fill(); // 프릴
-        g.fillStyle = '#2e7d32';
-        g.beginPath(); g.ellipse(150, 170, 70, 60, 0, 0, Math.PI*2); g.fill(); // 코/얼굴
-        // 뿔
-        g.fillStyle = '#f5f6fa';
-        g.beginPath(); g.moveTo(110, 130); g.lineTo(80, 50); g.lineTo(130, 115); g.fill();
-        g.beginPath(); g.moveTo(190, 130); g.lineTo(220, 50); g.lineTo(170, 115); g.fill();
-        g.beginPath(); g.moveTo(145, 190); g.lineTo(150, 145); g.lineTo(155, 190); g.fill();
-        // 눈
-        g.fillStyle = '#f1c40f';
-        g.beginPath(); g.arc(115, 155, 9, 0, Math.PI*2); g.arc(185, 155, 9, 0, Math.PI*2); g.fill();
-        g.fillStyle = '#000';
-        g.beginPath(); g.arc(115, 155, 5, 0, Math.PI*2); g.arc(185, 155, 5, 0, Math.PI*2); g.fill();
-      } else if (key === 'pteranodon') {
-        // 프테라노돈
-        g.fillStyle = '#e67e22'; g.fillRect(0, 0, 300, 300);
-        g.fillStyle = '#c0392b';
-        g.beginPath();
-        g.moveTo(30, 170); g.lineTo(150, 90); g.lineTo(270, 170); g.lineTo(150, 135); g.closePath(); g.fill(); // 날개
-        g.fillStyle = '#b71540';
-        g.beginPath(); g.moveTo(150, 110); g.lineTo(240, 50); g.lineTo(160, 120); g.fill(); // 볏
-        g.fillStyle = '#d35400';
-        g.beginPath(); g.moveTo(140, 115); g.lineTo(70, 145); g.lineTo(145, 130); g.fill(); // 부리
-        g.fillStyle = '#fff'; g.beginPath(); g.arc(145, 118, 6, 0, Math.PI*2); g.fill();
-        g.fillStyle = '#000'; g.beginPath(); g.arc(145, 118, 3, 0, Math.PI*2); g.fill();
-      } else if (key === 'dolphin') {
-        // 돌고래
-        g.fillStyle = '#00cec9'; g.fillRect(0, 0, 300, 300);
-        g.fillStyle = '#0984e3';
-        g.beginPath();
-        g.moveTo(40, 180); g.quadraticCurveTo(120, 60, 230, 120);
-        g.quadraticCurveTo(270, 140, 250, 160);
-        g.quadraticCurveTo(160, 195, 60, 185);
-        g.closePath(); g.fill();
-        g.beginPath(); g.moveTo(135, 90); g.lineTo(160, 50); g.lineTo(170, 100); g.fill(); // 등지느러미
-        g.fillStyle = '#74b9ff';
-        g.beginPath(); g.ellipse(150, 165, 65, 18, -0.2, 0, Math.PI*2); g.fill(); // 배
-        g.fillStyle = '#fff'; g.beginPath(); g.arc(205, 128, 7, 0, Math.PI*2); g.fill();
-        g.fillStyle = '#000'; g.beginPath(); g.arc(206, 128, 4, 0, Math.PI*2); g.fill();
-      } else if (key === 'turtle') {
-        // 바다거북
-        g.fillStyle = '#0984e3'; g.fillRect(0, 0, 300, 300);
-        g.fillStyle = '#10ac84';
-        g.beginPath(); g.ellipse(150, 150, 85, 65, 0, 0, Math.PI*2); g.fill(); // 등딱지
-        g.fillStyle = '#1b8d6f';
-        g.beginPath(); g.ellipse(150, 150, 70, 50, 0, 0, Math.PI*2); g.fill();
-        g.fillStyle = '#2ed573';
-        g.beginPath(); g.arc(235, 140, 22, 0, Math.PI*2); g.fill(); // 머리
-        g.beginPath(); g.ellipse(180, 85, 38, 16, 0.5, 0, Math.PI*2); g.fill(); // 앞발
-        g.beginPath(); g.ellipse(180, 215, 38, 16, -0.5, 0, Math.PI*2); g.fill();
-        g.fillStyle = '#000'; g.beginPath(); g.arc(242, 135, 5, 0, Math.PI*2); g.fill();
-      } else if (key === 'whale') {
-        // 고래
-        g.fillStyle = '#0c2461'; g.fillRect(0, 0, 300, 300);
-        g.fillStyle = '#1e3799';
-        g.beginPath(); g.ellipse(140, 155, 110, 65, 0, 0, Math.PI*2); g.fill();
-        g.beginPath(); g.moveTo(40, 155); g.lineTo(15, 110); g.lineTo(25, 155); g.lineTo(15, 200); g.fill(); // 꼬리
-        g.fillStyle = '#4a69bd';
-        g.beginPath(); g.ellipse(140, 175, 85, 30, 0, 0, Math.PI*2); g.fill(); // 배 주름
-        g.fillStyle = '#fff'; g.beginPath(); g.arc(215, 145, 7, 0, Math.PI*2); g.fill();
-        g.fillStyle = '#000'; g.beginPath(); g.arc(217, 145, 4, 0, Math.PI*2); g.fill();
-      } else if (key === 'plesio') {
-        // 플레시오사우루스
-        g.fillStyle = '#1e3799'; g.fillRect(0, 0, 300, 300);
-        g.fillStyle = '#00cec9';
-        g.beginPath(); g.ellipse(120, 175, 75, 45, 0, 0, Math.PI*2); g.fill(); // 몸
-        g.beginPath();
-        g.moveTo(155, 160); g.quadraticCurveTo(220, 130, 210, 70);
-        g.quadraticCurveTo(230, 50, 245, 65);
-        g.quadraticCurveTo(240, 100, 185, 175);
-        g.closePath(); g.fill(); // 긴 목과 머리
-        g.beginPath(); g.ellipse(100, 215, 35, 14, 0.4, 0, Math.PI*2); g.fill(); // 지느러미
-        g.fillStyle = '#000'; g.beginPath(); g.arc(230, 62, 5, 0, Math.PI*2); g.fill();
-      } else if (key === 'mosa') {
-        // 모사사우루스
-        g.fillStyle = '#182C61'; g.fillRect(0, 0, 300, 300);
-        g.fillStyle = '#3B3B98';
-        g.beginPath();
-        g.moveTo(40, 150); g.quadraticCurveTo(130, 85, 260, 135);
-        g.quadraticCurveTo(210, 195, 60, 165);
-        g.closePath(); g.fill();
-        // 입 & 이빨
-        g.lineWidth = 3; g.strokeStyle = '#fff';
-        g.beginPath(); g.moveTo(260, 135); g.lineTo(210, 130); g.stroke();
-        g.fillStyle = '#fff';
-        for(let x=215; x<255; x+=8) {
-          g.beginPath(); g.moveTo(x, 130); g.lineTo(x+4, 138); g.lineTo(x+8, 130); g.fill();
-        }
-        g.fillStyle = '#f1c40f'; g.beginPath(); g.arc(220, 122, 6, 0, Math.PI*2); g.fill();
-        g.fillStyle = '#000'; g.beginPath(); g.arc(220, 122, 3, 0, Math.PI*2); g.fill();
-      }
-
-      const url = off.toDataURL('image/png');
-      generatedDataUrls[key] = url;
+    const loadedImgs = {};
+    for (let key in REAL_PHOTO_URLS) {
       const img = new Image();
-      img.src = url;
-      generatedImages[key] = img;
+      img.src = REAL_PHOTO_URLS[key];
+      loadedImgs[key] = img;
     }
-
-    // 모든 크리처 이미지 사전 생성
-    ['lion', 'giraffe', 'monkey', 't_rex', 'trike', 'pteranodon', 'dolphin', 'turtle', 'whale', 'plesio', 'mosa'].forEach(generateRealArtwork);
 
     function resize() {
       canvas.width = window.innerWidth;
@@ -442,7 +262,7 @@
         if (e.x < e.minX || e.x > e.maxX) e.vx *= -1;
         if (e.y < e.minY || e.y > e.maxY) e.vy *= -1;
 
-        const img = generatedImages[e.key];
+        const img = loadedImgs[e.key];
         const r = 48;
 
         ctx.save();
@@ -455,8 +275,11 @@
         ctx.stroke();
         ctx.clip();
 
-        if (img) {
+        if (img && img.complete && img.naturalWidth > 0) {
           ctx.drawImage(img, e.x - r, e.y - r, r * 2, r * 2);
+        } else {
+          ctx.fillStyle = '#34495e';
+          ctx.fill();
         }
         ctx.restore();
 
@@ -537,7 +360,7 @@
     function renderDragBoard() {
       const board = document.getElementById('puzzleBoard');
       board.innerHTML = '';
-      const photoUrl = generatedDataUrls[currentSelected.key];
+      const photoUrl = REAL_PHOTO_URLS[currentSelected.key];
 
       for (let slot = 0; slot < 9; slot++) {
         const tileId = positions[slot];
