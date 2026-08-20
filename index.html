@@ -114,28 +114,32 @@
     }
     #cameraVideo { width: 100vw; height: 100vh; object-fit: cover; position: absolute; top: 0; left: 0; }
 
-    /* 소환된 피규어 객체 */
+    /* 투명 3D 피규어 객체 & 바닥 그림자 */
     #arObjectWrapper {
-      position: absolute; top: 55%; left: 50%;
+      position: absolute; top: 60%; left: 50%;
       transform: translate(-50%, -50%);
       display: flex; flex-direction: column; align-items: center;
       cursor: grab; touch-action: none; z-index: 10;
     }
-    #arFigureBox {
-      width: 170px; height: 170px; border-radius: 20px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 6rem;
-      filter: drop-shadow(0 12px 16px rgba(0,0,0,0.45));
+    #arFigureImg {
+      width: 190px; height: 190px; object-fit: contain;
+      filter: drop-shadow(0 15px 12px rgba(0,0,0,0.4));
       animation: figureBounce 1.8s infinite ease-in-out;
+      pointer-events: none;
     }
     @keyframes figureBounce {
       0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-20px); }
+      50% { transform: translateY(-22px); }
     }
     .figure-shadow {
-      width: 120px; height: 22px;
-      background: radial-gradient(ellipse at center, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 75%);
-      border-radius: 50%; margin-top: -10px;
+      width: 140px; height: 24px;
+      background: radial-gradient(ellipse at center, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0) 75%);
+      border-radius: 50%; margin-top: -12px;
+      animation: shadowScale 1.8s infinite ease-in-out;
+    }
+    @keyframes shadowScale {
+      0%, 100% { transform: scale(1); opacity: 0.55; }
+      50% { transform: scale(0.75); opacity: 0.25; }
     }
 
     .ar-controls {
@@ -242,13 +246,13 @@
     <video id="cameraVideo" autoplay playsinline muted></video>
 
     <div id="arObjectWrapper">
-      <div id="arFigureBox">🦁</div>
+      <img id="arFigureImg" src="" alt="AR 피규어">
       <div class="figure-shadow"></div>
     </div>
 
     <div class="ar-controls">
       <button class="ctrl-btn" onclick="resizeFigure(0.8)">작게 ➖</button>
-      <button class="ctrl-btn" onclick="toggleAnimation()">모션 ✨</button>
+      <button class="ctrl-btn" onclick="toggleAnimation()">점프 🔄</button>
       <button class="ctrl-btn" onclick="resizeFigure(1.25)">크게 ➕</button>
     </div>
 
@@ -272,31 +276,32 @@
     let currentScale = 1.0;
     let isBouncing = true;
 
+    // 고화질 투명 누끼 3D 피규어 그래픽 + 실사 사진 데이터
     const CREATURE_DATA = {
       'land-animal': [
-        { id: 'lion', name: '사자', file: 'lion.jpg', fallback: 'https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=400&h=400&fit=crop&q=80', emoji: '🦁', desc: '용맹한 백수의 왕 사자!' },
-        { id: 'tiger', name: '호랑이', file: 'tiger.jpg', fallback: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&h=400&fit=crop&q=80', emoji: '🐯', desc: '줄무늬가 멋진 호랑이 친구!' },
-        { id: 'giraffe', name: '기린', file: 'giraffe.jpg', fallback: 'https://images.unsplash.com/photo-1538121669313-d150b4001ab9?w=400&h=400&fit=crop&q=80', emoji: '🦒', desc: '목이 아주 긴 기린 친구!' },
-        { id: 'elephant', name: '코끼리', file: 'elephant.jpg', fallback: 'https://images.unsplash.com/photo-1557050543-4d5f4e07ef46?w=400&h=400&fit=crop&q=80', emoji: '🐘', desc: '코가 긴 듬직한 코끼리!' },
-        { id: 'zebra', name: '얼룩말', file: 'zebra.jpg', fallback: 'https://images.unsplash.com/photo-1526095179574-86e545346ae6?w=400&h=400&fit=crop&q=80', emoji: '🦓', desc: '달리기를 잘하는 얼룩말!' },
-        { id: 'panda', name: '판다', file: 'panda.jpg', fallback: 'https://images.unsplash.com/photo-1527118732049-c88155f2107c?w=400&h=400&fit=crop&q=80', emoji: '🐼', desc: '대나무를 좋아하는 귀여운 판다!' }
+        { id: 'lion', name: '사자', file: 'lion.jpg', figure: 'https://cdn-icons-png.flaticon.com/512/1998/1998627.png', fallback: 'https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=400&h=400&fit=crop&q=80', desc: '용맹한 백수의 왕 사자!' },
+        { id: 'tiger', name: '호랑이', file: 'tiger.jpg', figure: 'https://cdn-icons-png.flaticon.com/512/1998/1998797.png', fallback: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&h=400&fit=crop&q=80', desc: '줄무늬가 멋진 호랑이 친구!' },
+        { id: 'giraffe', name: '기린', file: 'giraffe.jpg', figure: 'https://cdn-icons-png.flaticon.com/512/1998/1998610.png', fallback: 'https://images.unsplash.com/photo-1538121669313-d150b4001ab9?w=400&h=400&fit=crop&q=80', desc: '목이 아주 긴 기린 친구!' },
+        { id: 'elephant', name: '코끼리', file: 'elephant.jpg', figure: 'https://cdn-icons-png.flaticon.com/512/1998/1998592.png', fallback: 'https://images.unsplash.com/photo-1557050543-4d5f4e07ef46?w=400&h=400&fit=crop&q=80', desc: '코가 긴 듬직한 코끼리!' },
+        { id: 'zebra', name: '얼룩말', file: 'zebra.jpg', figure: 'https://cdn-icons-png.flaticon.com/512/1998/1998813.png', fallback: 'https://images.unsplash.com/photo-1526095179574-86e545346ae6?w=400&h=400&fit=crop&q=80', desc: '달리기를 잘하는 얼룩말!' },
+        { id: 'panda', name: '판다', file: 'panda.jpg', figure: 'https://cdn-icons-png.flaticon.com/512/1998/1998713.png', fallback: 'https://images.unsplash.com/photo-1527118732049-c88155f2107c?w=400&h=400&fit=crop&q=80', desc: '대나무를 좋아하는 귀여운 판다!' }
       ],
       'land-dino': [
-        { id: 'trex', name: '티라노사우루스', file: 'trex.jpg', fallback: 'https://images.unsplash.com/photo-1568832359672-e36cf5d74f54?w=400&h=400&fit=crop&q=80', emoji: '🦖', desc: '공룡의 제왕 티라노사우루스!' },
-        { id: 'trike', name: '트리케라톱스', file: 'trike.jpg', fallback: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&h=400&fit=crop&q=80', emoji: '🦏', desc: '뿔이 멋진 트리케라톱스!' },
-        { id: 'brachio', name: '브라키오사우루스', file: 'brachio.jpg', fallback: 'https://images.unsplash.com/photo-1525869916826-972885c91c1e?w=400&h=400&fit=crop&q=80', emoji: '🦕', desc: '키가 아주 큰 브라키오사우루스!' },
-        { id: 'stego', name: '스테고사우루스', file: 'stego.jpg', fallback: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=400&h=400&fit=crop&q=80', emoji: '🦎', desc: '등에 골판이 뾰족한 스테고사우루스!' },
-        { id: 'ptera', name: '프테라노돈', file: 'ptera.jpg', fallback: 'https://images.unsplash.com/photo-1606857521015-7f9fcf423740?w=400&h=400&fit=crop&q=80', emoji: '🦅', desc: '하늘을 나는 멋진 프테라노돈!' }
+        { id: 'trex', name: '티라노사우루스', file: 'trex.jpg', figure: 'https://cdn-icons-png.flaticon.com/512/2361/2361819.png', fallback: 'https://images.unsplash.com/photo-1568832359672-e36cf5d74f54?w=400&h=400&fit=crop&q=80', desc: '공룡의 제왕 티라노사우루스!' },
+        { id: 'trike', name: '트리케라톱스', file: 'trike.jpg', figure: 'https://cdn-icons-png.flaticon.com/512/2361/2361845.png', fallback: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&h=400&fit=crop&q=80', desc: '뿔이 멋진 트리케라톱스!' },
+        { id: 'brachio', name: '브라키오사우루스', file: 'brachio.jpg', figure: 'https://cdn-icons-png.flaticon.com/512/2361/2361826.png', fallback: 'https://images.unsplash.com/photo-1525869916826-972885c91c1e?w=400&h=400&fit=crop&q=80', desc: '키가 아주 큰 브라키오사우루스!' },
+        { id: 'stego', name: '스테고사우루스', file: 'stego.jpg', figure: 'https://cdn-icons-png.flaticon.com/512/2361/2361838.png', fallback: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=400&h=400&fit=crop&q=80', desc: '등에 골판이 뾰족한 스테고사우루스!' },
+        { id: 'ptera', name: '프테라노돈', file: 'ptera.jpg', figure: 'https://cdn-icons-png.flaticon.com/512/2361/2361831.png', fallback: 'https://images.unsplash.com/photo-1606857521015-7f9fcf423740?w=400&h=400&fit=crop&q=80', desc: '하늘을 나는 멋진 프테라노돈!' }
       ],
       'sea-animal': [
-        { id: 'dolphin', name: '돌고래', file: 'dolphin.jpg', fallback: 'https://images.unsplash.com/photo-1607153333879-c174d265f1d2?w=400&h=400&fit=crop&q=80', emoji: '🐬', desc: '헤엄을 잘 치는 돌고래!' },
-        { id: 'whale', name: '고래', file: 'whale.jpg', fallback: 'https://images.unsplash.com/photo-1568430467505-5925a74e5028?w=400&h=400&fit=crop&q=80', emoji: '🐳', desc: '바다에서 가장 큰 대왕고래!' },
-        { id: 'shark', name: '상어', file: 'shark.jpg', fallback: 'https://images.unsplash.com/photo-1560275619-4662e36fa65c?w=400&h=400&fit=crop&q=80', emoji: '🦈', desc: '바다의 사냥꾼 백상아리!' },
-        { id: 'turtle', name: '바다거북', file: 'turtle.jpg', fallback: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&h=400&fit=crop&q=80', emoji: '🐢', desc: '느릿느릿 귀여운 바다거북!' }
+        { id: 'dolphin', name: '돌고래', file: 'dolphin.jpg', figure: 'https://cdn-icons-png.flaticon.com/512/1998/1998585.png', fallback: 'https://images.unsplash.com/photo-1607153333879-c174d265f1d2?w=400&h=400&fit=crop&q=80', desc: '헤엄을 잘 치는 돌고래!' },
+        { id: 'whale', name: '고래', file: 'whale.jpg', figure: 'https://cdn-icons-png.flaticon.com/512/1998/1998805.png', fallback: 'https://images.unsplash.com/photo-1568430467505-5925a74e5028?w=400&h=400&fit=crop&q=80', desc: '바다에서 가장 큰 대왕고래!' },
+        { id: 'shark', name: '상어', file: 'shark.jpg', figure: 'https://cdn-icons-png.flaticon.com/512/1998/1998772.png', fallback: 'https://images.unsplash.com/photo-1560275619-4662e36fa65c?w=400&h=400&fit=crop&q=80', desc: '바다의 사냥꾼 백상아리!' },
+        { id: 'turtle', name: '바다거북', file: 'turtle.jpg', figure: 'https://cdn-icons-png.flaticon.com/512/1998/1998792.png', fallback: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&h=400&fit=crop&q=80', desc: '느릿느릿 귀여운 바다거북!' }
       ],
       'sea-dino': [
-        { id: 'mosa', name: '모사사우루스', file: 'mosa.jpg', fallback: 'https://images.unsplash.com/photo-1570481662006-a3a1374699e8?w=400&h=400&fit=crop&q=80', emoji: '🐊', desc: '고대 바다의 최강자 모사사우루스!' },
-        { id: 'plesio', name: '플레시오사우루스', file: 'plesio.jpg', fallback: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&h=400&fit=crop&q=80', emoji: '🦕', desc: '목이 긴 신비로운 플레시오사우루스!' }
+        { id: 'mosa', name: '모사사우루스', file: 'mosa.jpg', figure: 'https://cdn-icons-png.flaticon.com/512/2361/2361819.png', fallback: 'https://images.unsplash.com/photo-1570481662006-a3a1374699e8?w=400&h=400&fit=crop&q=80', desc: '고대 바다의 최강자 모사사우루스!' },
+        { id: 'plesio', name: '플레시오사우루스', file: 'plesio.jpg', figure: 'https://cdn-icons-png.flaticon.com/512/2361/2361826.png', fallback: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&h=400&fit=crop&q=80', desc: '목이 긴 신비로운 플레시오사우루스!' }
       ]
     };
 
@@ -349,8 +354,7 @@
             img.src = item.fallback;
             activePhotoUrls[item.id] = item.fallback;
           } else {
-            img.style.display = 'none';
-            wrap.innerText = item.emoji;
+            img.src = item.figure;
           }
         };
 
@@ -387,9 +391,9 @@
       document.getElementById('actionOverlay').style.display = 'none';
       const arView = document.getElementById('cameraARView');
       const video = document.getElementById('cameraVideo');
-      const figureBox = document.getElementById('arFigureBox');
+      const figureImg = document.getElementById('arFigureImg');
 
-      figureBox.innerText = currentSelected.emoji;
+      figureImg.src = currentSelected.figure;
       currentScale = 1.0;
       updateObjectScale();
 
@@ -417,7 +421,7 @@
     }
 
     function resizeFigure(delta) {
-      currentScale = Math.min(2.5, Math.max(0.5, currentScale * delta));
+      currentScale = Math.min(2.2, Math.max(0.5, currentScale * delta));
       updateObjectScale();
     }
 
@@ -427,7 +431,7 @@
     }
 
     function toggleAnimation() {
-      const figure = document.getElementById('arFigureBox');
+      const figure = document.getElementById('arFigureImg');
       isBouncing = !isBouncing;
       figure.style.animation = isBouncing ? 'figureBounce 1.8s infinite ease-in-out' : 'none';
     }
