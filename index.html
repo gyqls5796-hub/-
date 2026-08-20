@@ -2,8 +2,9 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
+  <meta name="referrer" content="no-referrer">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-  <title>동물 & 공룡 스티커 도감</title>
+  <title>동물 & 공룡 실사 도감</title>
   <style>
     * { box-sizing: border-box; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
     body {
@@ -15,7 +16,7 @@
       overflow-x: hidden;
     }
 
-    /* 풀스크린 선택 화면 (1단계 & 2단계) */
+    /* 1단계 & 2단계 풀스크린 선택 화면 */
     .step-screen {
       position: fixed;
       top: 0;
@@ -102,7 +103,7 @@
     }
     .header-dummy { width: 70px; }
 
-    /* 큼직한 도감 그리드 */
+    /* 큼직한 실사 사진 카드 그리드 */
     .grid-container {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -115,7 +116,7 @@
     .card {
       background: #ffffff;
       border-radius: 22px;
-      padding: 12px;
+      padding: 10px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -128,23 +129,23 @@
       transform: scale(0.94);
     }
     .card-img-wrap {
-      width: 110px;
-      height: 110px;
+      width: 120px;
+      height: 120px;
       border-radius: 18px;
       overflow: hidden;
-      background: #f8f9fa;
+      background: #e4e7eb;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: inset 0 0 6px rgba(0,0,0,0.06);
     }
     .card-img-wrap img {
       width: 100%;
       height: 100%;
       object-fit: cover;
+      display: block;
     }
     .card-name {
-      font-size: 1.1rem;
+      font-size: 1.15rem;
       font-weight: 800;
       margin-top: 10px;
       color: #2f3542;
@@ -156,7 +157,7 @@
       position: fixed;
       top: 0; left: 0;
       width: 100vw; height: 100vh;
-      background: rgba(0, 0, 0, 0.9);
+      background: rgba(0, 0, 0, 0.92);
       z-index: 100;
       flex-direction: column;
       justify-content: center;
@@ -179,7 +180,7 @@
     }
     #closePuzzleBtn:active { transform: scale(0.95); }
 
-    .puzzle-header h2 { font-size: 1.9rem; margin: 0 0 4px 0; color: #fbc531; text-align: center; }
+    .puzzle-header h2 { font-size: 2rem; margin: 0 0 4px 0; color: #fbc531; text-align: center; }
     .puzzle-header p { font-size: 1rem; margin: 0 0 16px 0; color: #dcdde1; text-align: center; }
     
     #puzzleBoard {
@@ -236,12 +237,12 @@
   <div id="screenCategory" class="step-screen" style="background: linear-gradient(135deg, #ffeaa7, #fab1a0); display: none;">
     <div class="step-title">누구를 만나볼까?</div>
     <div class="btn-wrap">
-      <button class="big-choice-btn" style="background: #a8e6cf;" onclick="chooseCategory('animal')">🦁 동물 친구들</button>
+      <button class="big-choice-btn" style="background: #a8e6cf;" onclick="chooseCategory('animal')">🦁 실제 동물</button>
       <button class="big-choice-btn" style="background: #ffd3b6;" onclick="chooseCategory('dino')">🦖 거대한 공룡</button>
     </div>
   </div>
 
-  <!-- 3단계: 도감 그리드 나열 화면 -->
+  <!-- 3단계: 실사 사진 도감 화면 -->
   <div id="listView">
     <header>
       <button class="home-btn" onclick="goToStart()">🏠 처음으로</button>
@@ -266,142 +267,42 @@
     let selectedTerrain = '';
     let selectedCategory = '';
 
-    // 도감 데이터 정의 (총 30종)
-    const CREATURE_DATA = {
+    // 실제 고화질 동물 및 공룡 사진 데이터
+    const REAL_PHOTO_DATA = {
       'land-animal': [
-        { id: 'lion', name: '사자', color: '#e67e22', desc: '용맹한 백수의 왕 사자!' },
-        { id: 'tiger', name: '호랑이', color: '#d35400', desc: '줄무늬가 멋진 어흥 호랑이!' },
-        { id: 'giraffe', name: '기린', color: '#f1c40f', desc: '목이 아주 긴 얼룩덜룩 기린!' },
-        { id: 'elephant', name: '코끼리', color: '#95a5a6', desc: '코가 손인 커다란 코끼리!' },
-        { id: 'zebra', name: '얼룩말', color: '#34495e', desc: '검은색 흰색 줄무늬 얼룩말!' },
-        { id: 'panda', name: '판다', color: '#2c3e50', desc: '대나무를 좋아하는 귀여운 판다!' },
-        { id: 'monkey', name: '원숭이', color: '#795548', desc: '나무를 잘 타는 장난꾸러기 원숭이!' },
-        { id: 'bear', name: '곰', color: '#5d4037', desc: '꿀을 좋아하는 든든한 곰!' }
+        { id: 'lion', name: '사자', photo: 'https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=400&h=400&fit=crop&q=80', desc: '용맹한 백수의 왕 사자!' },
+        { id: 'tiger', name: '호랑이', photo: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&h=400&fit=crop&q=80', desc: '줄무늬가 멋진 호랑이!' },
+        { id: 'giraffe', name: '기린', photo: 'https://images.unsplash.com/photo-1538121669313-d150b4001ab9?w=400&h=400&fit=crop&q=80', desc: '목이 아주 긴 기린!' },
+        { id: 'elephant', name: '코끼리', photo: 'https://images.unsplash.com/photo-1557050543-4d5f4e07ef46?w=400&h=400&fit=crop&q=80', desc: '코가 긴 커다란 코끼리!' },
+        { id: 'zebra', name: '얼룩말', photo: 'https://images.unsplash.com/photo-1526095179574-86e545346ae6?w=400&h=400&fit=crop&q=80', desc: '검은색 흰색 줄무늬 얼룩말!' },
+        { id: 'panda', name: '판다', photo: 'https://images.unsplash.com/photo-1527118732049-c88155f2107c?w=400&h=400&fit=crop&q=80', desc: '대나무를 좋아하는 귀여운 판다!' },
+        { id: 'monkey', name: '원숭이', photo: 'https://images.unsplash.com/photo-1540573133985-87b6da6d54a9?w=400&h=400&fit=crop&q=80', desc: '장난꾸러기 원숭이!' },
+        { id: 'bear', name: '곰', photo: 'https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?w=400&h=400&fit=crop&q=80', desc: '듬직하고 커다란 곰!' }
       ],
       'land-dino': [
-        { id: 't_rex', name: '티라노사우루스', color: '#c0392b', desc: '가장 무시무시한 공룡의 제왕 티라노사우루스!' },
-        { id: 'trike', name: '트리케라톱스', color: '#27ae60', desc: '뿔이 세 개 달린 멋진 트리케라톱스!' },
-        { id: 'brachio', name: '브라키오사우루스', color: '#16a085', desc: '키가 아주아주 큰 거인 브라키오사우루스!' },
-        { id: 'stego', name: '스테고사우루스', color: '#d35400', desc: '등에 골판이 뾰족뾰족 스테고사우루스!' },
-        { id: 'ptera', name: '프테라노돈', color: '#e67e22', desc: '하늘을 훨훨 나는 익룡 프테라노돈!' },
-        { id: 'ankyl', name: '안킬로사우루스', color: '#7f8c8d', desc: '꼬리에 철퇴가 달린 갑옷공룡 안킬로사우루스!' },
-        { id: 'raptor', name: '벨로키랍토르', color: '#8e44ad', desc: '달리기가 엄청 빠른 사냥꾼 벨로키랍토르!' },
-        { id: 'spino', name: '스피노사우루스', color: '#2980b9', desc: '등에 커다란 돛이 달린 거대공룡 스피노사우루스!' }
+        { id: 't_rex', name: '티라노사우루스', photo: 'https://images.unsplash.com/photo-1568832359672-e36cf5d74f54?w=400&h=400&fit=crop&q=80', desc: '공룡의 제왕 티라노사우루스!' },
+        { id: 'trike', name: '트리케라톱스', photo: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&h=400&fit=crop&q=80', desc: '뿔이 세 개 달린 트리케라톱스!' },
+        { id: 'brachio', name: '브라키오사우루스', photo: 'https://images.unsplash.com/photo-1525869916826-972885c91c1e?w=400&h=400&fit=crop&q=80', desc: '키가 아주 큰 브라키오사우루스!' },
+        { id: 'stego', name: '스테고사우루스', photo: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=400&h=400&fit=crop&q=80', desc: '등에 뾰족한 골판이 있는 스테고사우루스!' },
+        { id: 'ptera', name: '프테라노돈', photo: 'https://images.unsplash.com/photo-1606857521015-7f9fcf423740?w=400&h=400&fit=crop&q=80', desc: '하늘을 나는 익룡 프테라노돈!' },
+        { id: 'raptor', name: '벨로키랍토르', photo: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=400&h=400&fit=crop&q=80', desc: '발이 빠른 사냥꾼 벨로키랍토르!' }
       ],
       'sea-animal': [
-        { id: 'dolphin', name: '돌고래', color: '#0984e3', desc: '점프를 잘하는 똑똑한 돌고래!' },
-        { id: 'whale', name: '고래', color: '#182C61', desc: '바다에서 가장 큰 대왕고래!' },
-        { id: 'shark', name: '상어', color: '#3867d6', desc: '날카로운 이빨을 가진 바다의 사냥꾼 상어!' },
-        { id: 'turtle', name: '바다거북', color: '#10ac84', desc: '바닷속을 천천히 헤엄치는 바다거북!' },
-        { id: 'octopus', name: '문어', color: '#eb3b5a', desc: '다리가 여덟 개 달린 똑똑한 문어!' },
-        { id: 'penguin', name: '펭귄', color: '#2f3542', desc: '뒤뚱뒤뚱 귀여운 턱시도 펭귄!' },
-        { id: 'seal', name: '물개', color: '#778ca3', desc: '박수를 짝짝 치는 매끈한 물개!' },
-        { id: 'seahorse', name: '해마', color: '#fa8231', desc: '꼬리로 해초를 꽉 잡는 아기 해마!' }
+        { id: 'dolphin', name: '돌고래', photo: 'https://images.unsplash.com/photo-1607153333879-c174d265f1d2?w=400&h=400&fit=crop&q=80', desc: '바다의 귀염둥이 돌고래!' },
+        { id: 'whale', name: '고래', photo: 'https://images.unsplash.com/photo-1568430467505-5925a74e5028?w=400&h=400&fit=crop&q=80', desc: '바다에서 가장 큰 대왕고래!' },
+        { id: 'shark', name: '상어', photo: 'https://images.unsplash.com/photo-1560275619-4662e36fa65c?w=400&h=400&fit=crop&q=80', desc: '날카로운 이빨을 가진 상어!' },
+        { id: 'turtle', name: '바다거북', photo: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&h=400&fit=crop&q=80', desc: '바다를 헤엄치는 바다거북!' },
+        { id: 'penguin', name: '펭귄', photo: 'https://images.unsplash.com/photo-1598439210625-5067c578f3f6?w=400&h=400&fit=crop&q=80', desc: '뒤뚱뒤뚱 귀여운 펭귄!' },
+        { id: 'seal', name: '물개', photo: 'https://images.unsplash.com/photo-1582298538104-fe2e74c27f59?w=400&h=400&fit=crop&q=80', desc: '매끈매끈 수영 잘하는 물개!' }
       ],
       'sea-dino': [
-        { id: 'mosa', name: '모사사우루스', color: '#1e272e', desc: '고대 바다의 무시무시한 지배자 모사사우루스!' },
-        { id: 'plesio', name: '플레시오사우루스', color: '#0abde3', desc: '목이 긴 신비로운 바다파충류 플레시오사우루스!' },
-        { id: 'megalodon', name: '메갈로돈', color: '#4b6584', desc: '집채만큼 거대한 고대 대형상어 메갈로돈!' },
-        { id: 'ichthyo', name: '익티오사우루스', color: '#20bf6b', desc: '돌고래를 쏙 빼닮은 고대 어룡 익티오사우루스!' },
-        { id: 'ammonite', name: '암모나이트', color: '#d1ccc0', desc: '동글동글 소용돌이 껍데기를 가진 암모나이트!' },
-        { id: 'trilobite', name: '삼엽충', color: '#a5b1c2', desc: '바다 밑바닥을 기어다니던 고대 바다 친구 삼엽충!' }
+        { id: 'mosa', name: '모사사우루스', photo: 'https://images.unsplash.com/photo-1570481662006-a3a1374699e8?w=400&h=400&fit=crop&q=80', desc: '고대 바다의 최강자 모사사우루스!' },
+        { id: 'plesio', name: '플레시오사우루스', photo: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&h=400&fit=crop&q=80', desc: '목이 긴 바다파충류 플레시오사우루스!' },
+        { id: 'megalodon', name: '메갈로돈', photo: 'https://images.unsplash.com/photo-1560275619-4662e36fa65c?w=400&h=400&fit=crop&q=80', desc: '거대한 고대 상어 메갈로돈!' }
       ]
     };
 
-    // 100% 로딩 보장 캔버스 그래픽 생성기
-    const generatedUrls = {};
-    function createArtwork(item) {
-      const c = document.createElement('canvas');
-      c.width = 300; c.height = 300;
-      const g = c.getContext('2d');
-
-      g.fillStyle = item.color;
-      g.fillRect(0, 0, 300, 300);
-
-      g.save();
-      if (item.id === 'lion') {
-        g.fillStyle = '#6e2c00'; g.beginPath(); g.arc(150, 150, 120, 0, Math.PI*2); g.fill();
-        g.fillStyle = '#f39c12'; g.beginPath(); g.ellipse(150, 155, 75, 65, 0, 0, Math.PI*2); g.fill();
-        g.fillStyle = '#fdebd0'; g.beginPath(); g.ellipse(150, 185, 40, 30, 0, 0, Math.PI*2); g.fill();
-        g.fillStyle = '#000'; g.beginPath(); g.arc(120, 140, 10, 0, Math.PI*2); g.arc(180, 140, 10, 0, Math.PI*2); g.fill();
-        g.fillStyle = '#922b21'; g.beginPath(); g.moveTo(140, 170); g.lineTo(160, 170); g.lineTo(150, 182); g.fill();
-      } else if (item.id === 'tiger') {
-        g.fillStyle = '#e67e22'; g.beginPath(); g.arc(150, 150, 95, 0, Math.PI*2); g.fill();
-        g.fillStyle = '#111';
-        for(let i=-60; i<=60; i+=30) {
-          g.beginPath(); g.moveTo(150+i, 70); g.lineTo(150+i+10, 110); g.lineTo(150+i-10, 110); g.fill();
-        }
-        g.fillStyle = '#fff'; g.beginPath(); g.ellipse(150, 180, 45, 30, 0, 0, Math.PI*2); g.fill();
-        g.fillStyle = '#000'; g.beginPath(); g.arc(115, 140, 9, 0, Math.PI*2); g.arc(185, 140, 9, 0, Math.PI*2); g.fill();
-      } else if (item.id === 'giraffe') {
-        g.fillStyle = '#f1c40f'; g.fillRect(120, 100, 60, 200);
-        g.beginPath(); g.ellipse(150, 100, 45, 60, 0, 0, Math.PI*2); g.fill();
-        g.fillStyle = '#a0522d';
-        g.beginPath(); g.arc(135, 45, 10, 0, Math.PI*2); g.arc(165, 45, 10, 0, Math.PI*2); g.fill();
-        g.fillRect(130, 140, 40, 30); g.fillRect(125, 200, 50, 40);
-        g.fillStyle = '#000'; g.beginPath(); g.arc(130, 90, 8, 0, Math.PI*2); g.arc(170, 90, 8, 0, Math.PI*2); g.fill();
-      } else if (item.id === 'elephant') {
-        g.fillStyle = '#7f8c8d'; g.beginPath(); g.arc(150, 140, 90, 0, Math.PI*2); g.fill();
-        g.beginPath(); g.arc(70, 130, 45, 0, Math.PI*2); g.arc(230, 130, 45, 0, Math.PI*2); g.fill();
-        g.fillRect(135, 160, 30, 110);
-        g.fillStyle = '#fff'; g.beginPath(); g.moveTo(125, 190); g.lineTo(105, 230); g.lineTo(130, 210); g.fill();
-        g.beginPath(); g.moveTo(175, 190); g.lineTo(195, 230); g.lineTo(170, 210); g.fill();
-        g.fillStyle = '#000'; g.beginPath(); g.arc(115, 130, 7, 0, Math.PI*2); g.arc(185, 130, 7, 0, Math.PI*2); g.fill();
-      } else if (item.id === 't_rex') {
-        g.fillStyle = '#27ae60';
-        g.beginPath(); g.moveTo(70, 190); g.quadraticCurveTo(60, 90, 160, 80); g.quadraticCurveTo(260, 75, 260, 140); g.quadraticCurveTo(260, 185, 170, 185); g.closePath(); g.fill();
-        g.fillStyle = '#fff';
-        for(let x=150; x<250; x+=16) {
-          g.beginPath(); g.moveTo(x, 145); g.lineTo(x+8, 162); g.lineTo(x+16, 145); g.fill();
-        }
-        g.fillStyle = '#f1c40f'; g.beginPath(); g.arc(185, 110, 11, 0, Math.PI*2); g.fill();
-        g.fillStyle = '#000'; g.beginPath(); g.arc(185, 110, 5, 0, Math.PI*2); g.fill();
-      } else if (item.id === 'trike') {
-        g.fillStyle = '#1e8449'; g.beginPath(); g.arc(150, 140, 105, 0, Math.PI*2); g.fill();
-        g.fillStyle = '#2ecc71'; g.beginPath(); g.ellipse(150, 175, 70, 60, 0, 0, Math.PI*2); g.fill();
-        g.fillStyle = '#ecf0f1';
-        g.beginPath(); g.moveTo(110, 130); g.lineTo(80, 50); g.lineTo(130, 115); g.fill();
-        g.beginPath(); g.moveTo(190, 130); g.lineTo(220, 50); g.lineTo(170, 115); g.fill();
-        g.beginPath(); g.moveTo(145, 190); g.lineTo(150, 145); g.lineTo(155, 190); g.fill();
-        g.fillStyle = '#000'; g.beginPath(); g.arc(115, 155, 8, 0, Math.PI*2); g.arc(185, 155, 8, 0, Math.PI*2); g.fill();
-      } else if (item.id === 'dolphin') {
-        g.fillStyle = '#0984e3';
-        g.beginPath(); g.moveTo(40, 180); g.quadraticCurveTo(120, 60, 240, 120); g.quadraticCurveTo(270, 140, 250, 160); g.quadraticCurveTo(160, 195, 60, 185); g.closePath(); g.fill();
-        g.fillStyle = '#74b9ff'; g.beginPath(); g.ellipse(150, 165, 65, 18, -0.2, 0, Math.PI*2); g.fill();
-        g.fillStyle = '#fff'; g.beginPath(); g.arc(205, 128, 8, 0, Math.PI*2); g.fill();
-        g.fillStyle = '#000'; g.beginPath(); g.arc(206, 128, 4, 0, Math.PI*2); g.fill();
-      } else if (item.id === 'whale') {
-        g.fillStyle = '#1e3799'; g.beginPath(); g.ellipse(140, 155, 110, 65, 0, 0, Math.PI*2); g.fill();
-        g.beginPath(); g.moveTo(40, 155); g.lineTo(15, 110); g.lineTo(25, 155); g.lineTo(15, 200); g.fill();
-        g.fillStyle = '#fff'; g.beginPath(); g.arc(215, 145, 8, 0, Math.PI*2); g.fill();
-        g.fillStyle = '#000'; g.beginPath(); g.arc(217, 145, 4, 0, Math.PI*2); g.fill();
-      } else if (item.id === 'mosa') {
-        g.fillStyle = '#38ada9';
-        g.beginPath(); g.moveTo(40, 150); g.quadraticCurveTo(130, 85, 260, 135); g.quadraticCurveTo(210, 195, 60, 165); g.closePath(); g.fill();
-        g.fillStyle = '#fff';
-        for(let x=215; x<255; x+=8) {
-          g.beginPath(); g.moveTo(x, 130); g.lineTo(x+4, 138); g.lineTo(x+8, 130); g.fill();
-        }
-        g.fillStyle = '#f1c40f'; g.beginPath(); g.arc(220, 122, 7, 0, Math.PI*2); g.fill();
-        g.fillStyle = '#000'; g.beginPath(); g.arc(220, 122, 3, 0, Math.PI*2); g.fill();
-      } else {
-        g.fillStyle = '#ffffff';
-        g.beginPath(); g.arc(150, 150, 85, 0, Math.PI*2); g.fill();
-        g.fillStyle = item.color;
-        g.beginPath(); g.arc(150, 150, 75, 0, Math.PI*2); g.fill();
-        g.fillStyle = '#ffffff';
-        g.font = 'bold 36px sans-serif';
-        g.textAlign = 'center'; g.textBaseline = 'middle';
-        g.fillText(item.name.substring(0, 2), 150, 150);
-      }
-      g.restore();
-
-      const dataUrl = c.toDataURL('image/png');
-      generatedUrls[item.id] = dataUrl;
-      return dataUrl;
-    }
-
-    // 1단계 선택 (육지 / 바다)
+    // 1단계 선택
     function chooseTerrain(t) {
       selectedTerrain = t;
       document.getElementById('screenTerrain').style.display = 'none';
@@ -409,7 +310,7 @@
       speak(t === 'land' ? '넓은 육지로 가요!' : '신비한 바다로 가요!');
     }
 
-    // 2단계 선택 (동물 / 공룡)
+    // 2단계 선택
     function chooseCategory(c) {
       selectedCategory = c;
       document.getElementById('screenCategory').style.display = 'none';
@@ -424,23 +325,22 @@
       };
 
       document.getElementById('categoryHeaderTitle').innerText = titleMap[key];
-      speak(c === 'animal' ? '동물 친구들을 만나봐요!' : '거대한 공룡을 만나봐요!');
+      speak(c === 'animal' ? '실제 동물 친구들을 만나봐요!' : '거대한 공룡을 만나봐요!');
       renderGrid(key);
     }
 
-    // 도감 카드 렌더링
+    // 도감 카드 렌더링 (실제 사진)
     function renderGrid(key) {
       const grid = document.getElementById('cardGrid');
       grid.innerHTML = '';
-      const list = CREATURE_DATA[key] || [];
+      const list = REAL_PHOTO_DATA[key] || [];
 
       list.forEach(item => {
-        const url = generatedUrls[item.id] || createArtwork(item);
         const card = document.createElement('div');
         card.className = 'card';
         card.innerHTML = `
           <div class="card-img-wrap">
-            <img src="${url}" alt="${item.name}">
+            <img src="${item.photo}" alt="${item.name}" loading="lazy">
           </div>
           <div class="card-name">${item.name}</div>
         `;
@@ -459,7 +359,7 @@
       selectedCategory = '';
     }
 
-    // TTS 음성 출력
+    // 음성 출력 (TTS)
     function speak(text) {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
@@ -514,7 +414,7 @@
     function renderPuzzleBoard() {
       const board = document.getElementById('puzzleBoard');
       board.innerHTML = '';
-      const photoUrl = generatedUrls[currentSelected.id];
+      const photoUrl = currentSelected.photo;
 
       for (let slot = 0; slot < 9; slot++) {
         const tileId = positions[slot];
