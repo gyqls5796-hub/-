@@ -2,52 +2,52 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
   <title>동물 & 공룡 서식지 탐험</title>
   <style>
-    * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+    * { box-sizing: border-box; user-select: none; -webkit-user-select: none; touch-action: none; }
     body { margin: 0; padding: 0; overflow: hidden; background: #1a1a1a; font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; text-align: center; }
     .screen { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; }
     .btn-container { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; z-index: 10; }
-    .game-btn { font-size: 1.8rem; padding: 18px 36px; border: none; border-radius: 20px; cursor: pointer; background: #ffe066; font-weight: bold; box-shadow: 0 6px #d4a000; transition: transform 0.1s; }
+    .game-btn { font-size: 1.8rem; padding: 18px 36px; border: none; border-radius: 20px; cursor: pointer; background: #ffe066; font-weight: bold; box-shadow: 0 6px #d4a000; }
     .game-btn:active { transform: translateY(4px); box-shadow: 0 2px #d4a000; }
-    canvas { display: block; touch-action: none; }
+    canvas { display: block; }
     
-    #backBtn { position: absolute; top: 15px; left: 15px; z-index: 50; font-size: 1.1rem; padding: 10px 18px; border-radius: 12px; border: none; background: rgba(255,255,255,0.9); font-weight: bold; cursor: pointer; display: none; box-shadow: 0 3px 6px rgba(0,0,0,0.3); }
+    #backBtn { position: absolute; top: 15px; left: 15px; z-index: 50; font-size: 1.1rem; padding: 10px 18px; border-radius: 12px; border: none; background: rgba(255,255,255,0.95); font-weight: bold; cursor: pointer; display: none; box-shadow: 0 3px 6px rgba(0,0,0,0.3); }
 
-    /* 3x3 퍼즐 모달 */
-    #puzzleOverlay { display: none; background: rgba(0, 0, 0, 0.9); color: white; z-index: 100; flex-direction: column; justify-content: center; align-items: center; }
-    .puzzle-header { margin-bottom: 15px; }
+    /* 3x3 드래그 퍼즐 모달 */
+    #puzzleOverlay { display: none; background: rgba(0, 0, 0, 0.92); color: white; z-index: 100; flex-direction: column; justify-content: center; align-items: center; }
     .puzzle-header h2 { font-size: 2.2rem; margin: 0 0 5px 0; color: #fbc531; }
-    .puzzle-header p { font-size: 1.1rem; margin: 0; color: #dcdde1; }
+    .puzzle-header p { font-size: 1.1rem; margin: 0 0 15px 0; color: #dcdde1; }
     
     #puzzleBoard {
-      width: 300px;
-      height: 300px;
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      grid-template-rows: repeat(3, 1fr);
-      gap: 3px;
-      background: #444;
+      width: 306px;
+      height: 306px;
+      position: relative;
+      background: #2f3640;
       border: 4px solid #fbc531;
       border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.7);
+      touch-action: none;
     }
     
     .tile {
+      width: 100px;
+      height: 100px;
+      position: absolute;
       background-size: 300px 300px;
-      cursor: pointer;
-      border-radius: 4px;
-      transition: transform 0.1s;
+      border-radius: 6px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+      cursor: grab;
+      transition: transform 0.15s ease, left 0.15s ease, top 0.15s ease;
+      touch-action: none;
     }
-    .tile.selected {
-      outline: 3px solid #ff4757;
-      transform: scale(0.96);
-    }
-    .tile.empty {
-      background: #2f3640 !important;
-      opacity: 0.3;
+    .tile.dragging {
+      cursor: grabbing;
+      z-index: 999 !important;
+      transform: scale(1.08);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+      transition: none !important;
     }
     #puzzleCompleteMsg {
       font-size: 1.8rem;
@@ -83,11 +83,11 @@
   <!-- 3단계: 서식지 캔버스 화면 -->
   <canvas id="gameCanvas" style="display: none;"></canvas>
 
-  <!-- 4단계: 3x3 퍼즐 창 -->
+  <!-- 4단계: 3x3 드래그 퍼즐 창 -->
   <div id="puzzleOverlay" class="screen">
     <div class="puzzle-header">
       <h2 id="puzzleTitle">동물 이름</h2>
-      <p id="puzzleSubtitle">조각 2개를 터치해서 자리를 바꿔 퍼즐을 맞춰보세요!</p>
+      <p id="puzzleSubtitle">조각을 손가락으로 끌어서 제자리에 맞춰보세요!</p>
     </div>
     <div id="puzzleBoard"></div>
     <div id="puzzleCompleteMsg">🎉 완성! 참 잘했어요! 🎉</div>
@@ -102,28 +102,26 @@
     let currentSelected = null;
     let animId = null;
 
-    // 실제 동물 & 공룡 고화질 사진 URL 목록
-    const IMAGES_DATA = {
-      lion: "https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=400&q=80",
-      giraffe: "https://images.unsplash.com/photo-1538121669313-d150b4001ab9?w=400&q=80",
-      monkey: "https://images.unsplash.com/photo-1540573133985-87b6da6d54a9?w=400&q=80",
-      t_rex: "https://images.unsplash.com/photo-1568832359672-e36cf5d74f54?w=400&q=80",
-      trike: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&q=80",
-      pteranodon: "https://images.unsplash.com/photo-1525869916826-972885c91c1e?w=400&q=80",
-      dolphin: "https://images.unsplash.com/photo-1607153333879-c174d265f1d2?w=400&q=80",
-      whale: "https://images.unsplash.com/photo-1568430467505-5925a74e5028?w=400&q=80",
-      turtle: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&q=80",
-      plesio: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&q=80",
-      mosa: "https://images.unsplash.com/photo-1570481662006-a3a1374699e8?w=400&q=80"
+    // 실사풍 벡터 그래픽 (SVG 기반 데이터 URI: 외부 인터넷 없이 100% 즉시 렌더링)
+    const CREATURE_SVGS = {
+      lion: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><rect width="300" height="300" fill="#e67e22"/><circle cx="150" cy="150" r="120" fill="#d35400"/><circle cx="150" cy="150" r="85" fill="#f39c12"/><circle cx="115" cy="130" r="12" fill="#2c3e50"/><circle cx="185" cy="130" r="12" fill="#2c3e50"/><polygon points="150,155 135,175 165,175" fill="#c0392b"/><path d="M135,185 Q150,195 165,185" stroke="#2c3e50" stroke-width="4" fill="none"/><circle cx="90" cy="90" r="25" fill="#d35400"/><circle cx="210" cy="90" r="25" fill="#d35400"/></svg>`,
+      giraffe: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><rect width="300" height="300" fill="#f1c40f"/><rect x="120" y="90" width="60" height="180" rx="30" fill="#f39c12"/><circle cx="150" cy="100" r="50" fill="#f39c12"/><circle cx="130" cy="90" r="8" fill="#2c3e50"/><circle cx="170" cy="90" r="8" fill="#2c3e50"/><rect x="135" y="140" width="30" height="25" rx="8" fill="#d35400"/><rect x="130" y="190" width="40" height="35" rx="10" fill="#d35400"/><line x1="135" y1="60" x2="130" y2="40" stroke="#d35400" stroke-width="6"/><circle cx="130" cy="38" r="7" fill="#d35400"/><line x1="165" y1="60" x2="170" y2="40" stroke="#d35400" stroke-width="6"/><circle cx="170" cy="38" r="7" fill="#d35400"/></svg>`,
+      monkey: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><rect width="300" height="300" fill="#27ae60"/><circle cx="70" cy="140" r="35" fill="#795548"/><circle cx="230" cy="140" r="35" fill="#795548"/><circle cx="150" cy="150" r="90" fill="#8d6e63"/><ellipse cx="150" cy="165" rx="65" ry="50" fill="#d7ccc8"/><circle cx="125" cy="130" r="10" fill="#2c3e50"/><circle cx="175" cy="130" r="10" fill="#2c3e50"/><ellipse cx="150" cy="155" rx="15" ry="8" fill="#5d4037"/><path d="M135,185 Q150,200 165,185" stroke="#5d4037" stroke-width="5" fill="none"/></svg>`,
+      t_rex: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><rect width="300" height="300" fill="#c0392b"/><path d="M80,180 Q60,90 170,80 Q250,75 250,140 Q250,190 190,190 Q150,190 120,220 Z" fill="#27ae60"/><circle cx="190" cy="110" r="10" fill="#f1c40f"/><circle cx="190" cy="110" r="5" fill="#000"/><path d="M160,150 L240,150" stroke="#1b5e20" stroke-width="4"/><polygon points="180,150 185,160 190,150 195,160 200,150 205,160 210,150" fill="#fff"/></svg>`,
+      trike: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><rect width="300" height="300" fill="#e67e22"/><circle cx="150" cy="150" r="95" fill="#2e7d32"/><polygon points="150,50 90,140 210,140" fill="#1b5e20"/><circle cx="115" cy="145" r="9" fill="#000"/><circle cx="185" cy="145" r="9" fill="#000"/><polygon points="150,165 142,120 158,120" fill="#ecf0f1"/><polygon points="105,120 90,80 115,100" fill="#ecf0f1"/><polygon points="195,120 210,80 185,100" fill="#ecf0f1"/></svg>`,
+      pteranodon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><rect width="300" height="300" fill="#2980b9"/><polygon points="30,170 150,100 270,170 150,140" fill="#e74c3c"/><polygon points="150,100 240,50 160,115" fill="#c0392b"/><circle cx="150" cy="110" r="18" fill="#e67e22"/><circle cx="160" cy="105" r="5" fill="#000"/><polygon points="165,115 250,135 160,125" fill="#f39c12"/></svg>`,
+      dolphin: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><rect width="300" height="300" fill="#00cec9"/><path d="M50,170 Q120,70 230,120 Q270,140 250,160 Q170,190 70,180 Z" fill="#0984e3"/><polygon points="140,95 165,60 175,105" fill="#0984e3"/><circle cx="210" cy="130" r="7" fill="#fff"/><circle cx="212" cy="130" r="4" fill="#000"/><path d="M70,175 Q40,150 30,185 Q50,180 70,175" fill="#74b9ff"/></svg>`,
+      turtle: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><rect width="300" height="300" fill="#1dd1a1"/><ellipse cx="150" cy="155" rx="85" ry="65" fill="#10ac84"/><ellipse cx="150" cy="155" rx="70" ry="50" fill="#1b8d6f"/><circle cx="235" cy="140" r="24" fill="#2ed573"/><circle cx="242" cy="135" r="5" fill="#000"/><ellipse cx="180" cy="90" rx="35" ry="15" fill="#2ed573"/><ellipse cx="180" cy="220" rx="35" ry="15" fill="#2ed573"/></svg>`,
+      whale: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><rect width="300" height="300" fill="#0c2461"/><ellipse cx="140" cy="155" rx="105" ry="60" fill="#192a56"/><ellipse cx="140" cy="175" rx="80" ry="30" fill="#487eb0"/><circle cx="215" cy="145" r="7" fill="#fff"/><circle cx="217" cy="145" r="4" fill="#000"/><path d="M40,155 C10,115 10,195 40,155 Z" fill="#192a56"/></svg>`,
+      plesio: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><rect width="300" height="300" fill="#0984e3"/><ellipse cx="130" cy="170" rx="75" ry="45" fill="#00cec9"/><path d="M165,160 Q215,140 210,80 Q225,60 240,75 Q235,110 190,175 Z" fill="#00cec9"/><circle cx="225" cy="70" r="5" fill="#000"/></svg>`,
+      mosa: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><rect width="300" height="300" fill="#1e272e"/><path d="M40,150 Q130,90 260,140 Q210,190 60,165 Z" fill="#38ada9"/><polygon points="260,140 210,130 220,155" fill="#fff"/><circle cx="220" cy="130" r="6" fill="#f1c40f"/><circle cx="220" cy="130" r="3" fill="#000"/></svg>`
     };
 
-    // 이미지 객체 캐싱
-    const loadedImages = {};
-    for (let key in IMAGES_DATA) {
+    const loadedImgs = {};
+    for (let key in CREATURE_SVGS) {
       const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.src = IMAGES_DATA[key];
-      loadedImages[key] = img;
+      img.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(CREATURE_SVGS[key]);
+      loadedImgs[key] = img;
     }
 
     function resize() {
@@ -141,8 +139,7 @@
       document.getElementById('puzzleOverlay').style.display = 'none';
       document.getElementById('screen2').style.display = 'none';
       document.getElementById('screen1').style.display = 'flex';
-      terrain = '';
-      category = '';
+      terrain = ''; category = '';
     }
 
     function selectTerrain(t) {
@@ -163,7 +160,6 @@
       gameLoop();
     }
 
-    // 서식지 및 동물 배치
     function initHabitatAndEntities() {
       const w = canvas.width, h = canvas.height;
       const zoneH = h / 3;
@@ -175,20 +171,20 @@
           { name: '🌴 울창한 정글 (원숭이)', grad: ['#81c784', '#388e3c'], y: zoneH * 2, h: zoneH }
         ];
         entities = [
-          { name: '기린', imgKey: 'giraffe', x: w * 0.5, y: zoneH * 0.5, vx: 0.6, vy: 0.2, minX: 60, maxX: w - 60, minY: 60, maxY: zoneH - 60 },
-          { name: '사자', imgKey: 'lion', x: w * 0.4, y: zoneH * 1.5, vx: -0.5, vy: 0.3, minX: 60, maxX: w - 60, minY: zoneH + 60, maxY: zoneH * 2 - 60 },
-          { name: '원숭이', imgKey: 'monkey', x: w * 0.6, y: zoneH * 2.5, vx: 0.8, vy: -0.4, minX: 60, maxX: w - 60, minY: zoneH * 2 + 60, maxY: h - 60 }
+          { name: '기린', key: 'giraffe', x: w * 0.5, y: zoneH * 0.5, vx: 0.6, vy: 0.2, minX: 60, maxX: w - 60, minY: 60, maxY: zoneH - 60 },
+          { name: '사자', key: 'lion', x: w * 0.4, y: zoneH * 1.5, vx: -0.5, vy: 0.3, minX: 60, maxX: w - 60, minY: zoneH + 60, maxY: zoneH * 2 - 60 },
+          { name: '원숭이', key: 'monkey', x: w * 0.6, y: zoneH * 2.5, vx: 0.8, vy: -0.4, minX: 60, maxX: w - 60, minY: zoneH * 2 + 60, maxY: h - 60 }
         ];
       } else if (terrain === 'land' && category === 'dino') {
         habitats = [
-          { name: '🌋 하늘과 화산 (프테라노돈)', grad: ['#e17055', '#d63031'], y: 0, h: zoneH },
+          { name: '🌋 화산 상공 (프테라노돈)', grad: ['#e17055', '#d63031'], y: 0, h: zoneH },
           { name: '🌲 백악기 숲 (티라노사우루스)', grad: ['#2ed573', '#1e8449'], y: zoneH, h: zoneH },
-          { name: '🏜️ 붉은 협곡 (트리케라톱스)', grad: ['#e58e26', '#b71540'], y: zoneH * 2, h: zoneH }
+          { name: '🏜️ 붉은 평원 (트리케라톱스)', grad: ['#e58e26', '#b71540'], y: zoneH * 2, h: zoneH }
         ];
         entities = [
-          { name: '프테라노돈', imgKey: 'pteranodon', x: w * 0.3, y: zoneH * 0.5, vx: 0.9, vy: 0.3, minX: 60, maxX: w - 60, minY: 60, maxY: zoneH - 60 },
-          { name: '티라노사우루스', imgKey: 't_rex', x: w * 0.5, y: zoneH * 1.5, vx: -0.6, vy: 0.2, minX: 60, maxX: w - 60, minY: zoneH + 60, maxY: zoneH * 2 - 60 },
-          { name: '트리케라톱스', imgKey: 'trike', x: w * 0.7, y: zoneH * 2.5, vx: 0.5, vy: -0.3, minX: 60, maxX: w - 60, minY: zoneH * 2 + 60, maxY: h - 60 }
+          { name: '프테라노돈', key: 'pteranodon', x: w * 0.3, y: zoneH * 0.5, vx: 0.9, vy: 0.3, minX: 60, maxX: w - 60, minY: 60, maxY: zoneH - 60 },
+          { name: '티라노사우루스', key: 't_rex', x: w * 0.5, y: zoneH * 1.5, vx: -0.6, vy: 0.2, minX: 60, maxX: w - 60, minY: zoneH + 60, maxY: zoneH * 2 - 60 },
+          { name: '트리케라톱스', key: 'trike', x: w * 0.7, y: zoneH * 2.5, vx: 0.5, vy: -0.3, minX: 60, maxX: w - 60, minY: zoneH * 2 + 60, maxY: h - 60 }
         ];
       } else if (terrain === 'sea' && category === 'animal') {
         habitats = [
@@ -197,9 +193,9 @@
           { name: '🌌 깊은 심해 (고래)', grad: ['#192a56', '#0c2461'], y: zoneH * 2, h: zoneH }
         ];
         entities = [
-          { name: '돌고래', imgKey: 'dolphin', x: w * 0.3, y: zoneH * 0.5, vx: 0.8, vy: 0.3, minX: 60, maxX: w - 60, minY: 60, maxY: zoneH - 60 },
-          { name: '바다거북', imgKey: 'turtle', x: w * 0.7, y: zoneH * 1.5, vx: -0.4, vy: 0.2, minX: 60, maxX: w - 60, minY: zoneH + 60, maxY: zoneH * 2 - 60 },
-          { name: '고래', imgKey: 'whale', x: w * 0.5, y: zoneH * 2.5, vx: 0.6, vy: -0.2, minX: 60, maxX: w - 60, minY: zoneH * 2 + 60, maxY: h - 60 }
+          { name: '돌고래', key: 'dolphin', x: w * 0.3, y: zoneH * 0.5, vx: 0.8, vy: 0.3, minX: 60, maxX: w - 60, minY: 60, maxY: zoneH - 60 },
+          { name: '바다거북', key: 'turtle', x: w * 0.7, y: zoneH * 1.5, vx: -0.4, vy: 0.2, minX: 60, maxX: w - 60, minY: zoneH + 60, maxY: zoneH * 2 - 60 },
+          { name: '고래', key: 'whale', x: w * 0.5, y: zoneH * 2.5, vx: 0.6, vy: -0.2, minX: 60, maxX: w - 60, minY: zoneH * 2 + 60, maxY: h - 60 }
         ];
       } else {
         habitats = [
@@ -207,16 +203,16 @@
           { name: '🌑 깊은 해저 계곡 (모사사우루스)', grad: ['#2e86de', '#0c2461'], y: zoneH * 1.5, h: zoneH * 1.5 }
         ];
         entities = [
-          { name: '플레시오사우루스', imgKey: 'plesio', x: w * 0.4, y: zoneH * 0.75, vx: 0.7, vy: 0.3, minX: 60, maxX: w - 60, minY: 60, maxY: zoneH * 1.5 - 60 },
-          { name: '모사사우루스', imgKey: 'mosa', x: w * 0.6, y: zoneH * 2.2, vx: -0.7, vy: -0.3, minX: 60, maxX: w - 60, minY: zoneH * 1.5 + 60, maxY: h - 60 }
+          { name: '플레시오사우루스', key: 'plesio', x: w * 0.4, y: zoneH * 0.75, vx: 0.7, vy: 0.3, minX: 60, maxX: w - 60, minY: 60, maxY: zoneH * 1.5 - 60 },
+          { name: '모사사우루스', key: 'mosa', x: w * 0.6, y: zoneH * 2.2, vx: -0.7, vy: -0.3, minX: 60, maxX: w - 60, minY: zoneH * 1.5 + 60, maxY: h - 60 }
         ];
       }
     }
 
-    // 메인 루프 (서식지 배경 및 원형 사진 렌더링)
     function gameLoop() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+      // 서식지 렌더링
       habitats.forEach(hab => {
         const grd = ctx.createLinearGradient(0, hab.y, 0, hab.y + hab.h);
         grd.addColorStop(0, hab.grad[0]);
@@ -224,24 +220,23 @@
         ctx.fillStyle = grd;
         ctx.fillRect(0, hab.y, canvas.width, hab.h);
 
-        // 구분선
-        ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+        ctx.strokeStyle = 'rgba(255,255,255,0.35)';
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(0, hab.y);
         ctx.lineTo(canvas.width, hab.y);
         ctx.stroke();
 
-        // 서식지 텍스트
         ctx.fillStyle = '#ffffff';
         ctx.shadowColor = 'rgba(0,0,0,0.5)';
         ctx.shadowBlur = 4;
-        ctx.font = 'bold 19px Apple SD Gothic Neo, sans-serif';
+        ctx.font = 'bold 18px Apple SD Gothic Neo, sans-serif';
         ctx.textAlign = 'left';
-        ctx.fillText(hab.name, 20, hab.y + 35);
+        ctx.fillText(hab.name, 20, hab.y + 32);
         ctx.shadowBlur = 0;
       });
 
+      // 동물 렌더링 (원형 액자)
       entities.forEach(e => {
         e.x += e.vx;
         e.y += e.vy;
@@ -249,29 +244,25 @@
         if (e.x < e.minX || e.x > e.maxX) e.vx *= -1;
         if (e.y < e.minY || e.y > e.maxY) e.vy *= -1;
 
-        const img = loadedImages[e.imgKey];
-        const r = 45; // 원형 이미지 반지름
+        const img = loadedImgs[e.key];
+        const r = 46;
 
         ctx.save();
         ctx.beginPath();
         ctx.arc(e.x, e.y, r, 0, Math.PI * 2);
         ctx.closePath();
-        ctx.shadowColor = 'rgba(0,0,0,0.4)';
-        ctx.shadowBlur = 8;
+
+        ctx.lineWidth = 5;
         ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 4;
         ctx.stroke();
         ctx.clip();
 
         if (img && img.complete) {
           ctx.drawImage(img, e.x - r, e.y - r, r * 2, r * 2);
-        } else {
-          ctx.fillStyle = '#ccc';
-          ctx.fill();
         }
         ctx.restore();
 
-        // 이름 표기
+        // 텍스트 라벨
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 16px Apple SD Gothic Neo, sans-serif';
         ctx.textAlign = 'center';
@@ -292,13 +283,12 @@
 
       entities.forEach(e => {
         const dist = Math.hypot(e.x - clickX, e.y - clickY);
-        if (dist < 55) {
-          open3x3Puzzle(e);
+        if (dist < 60) {
+          openDragPuzzle(e);
         }
       });
     });
 
-    // 음성 출력
     function speak(text) {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
@@ -309,26 +299,23 @@
       }
     }
 
-    // 3x3 퍼즐 시스템 (터치로 조각 맞바꾸기)
-    let puzzleTiles = [];
-    let firstSelectedTile = null;
+    /* --- 3x3 터치 드래그 앤 드롭 퍼즐 엔진 --- */
+    let positions = []; // 각 슬롯 [0~8] 에 위치한 원본 타일 ID
+    let isDragging = false;
+    let dragEl = null;
+    let dragSlotIdx = -1;
+    let startX = 0, startY = 0, origLeft = 0, origTop = 0;
 
-    function open3x3Puzzle(entity) {
+    function openDragPuzzle(entity) {
       currentSelected = entity;
-      speak(`이 동물은 ${entity.name}! 3곱하기 3 퍼즐을 맞춰봐요!`);
+      speak(`이 동물은 ${entity.name}! 퍼즐을 손으로 끌어서 맞춰봐요!`);
       document.getElementById('puzzleTitle').innerText = `${entity.name} 맞추기`;
       document.getElementById('puzzleCompleteMsg').style.display = 'none';
       document.getElementById('puzzleOverlay').style.display = 'flex';
 
-      const board = document.getElementById('puzzleBoard');
-      board.innerHTML = '';
-      firstSelectedTile = null;
-
-      // 0부터 8까지의 인덱스 배열 생성 후 섞기
-      puzzleTiles = [0, 1, 2, 3, 4, 5, 6, 7, 8];
-      shuffle(puzzleTiles);
-
-      renderPuzzleBoard();
+      positions = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+      shuffle(positions);
+      renderDragBoard();
     }
 
     function shuffle(arr) {
@@ -336,59 +323,129 @@
         const j = Math.floor(Math.random() * (i + 1));
         [arr[i], arr[j]] = [arr[j], arr[i]];
       }
-      // 이미 다 맞춰진 상태 방지
       if (arr.every((val, idx) => val === idx)) {
         [arr[0], arr[1]] = [arr[1], arr[0]];
       }
     }
 
-    function renderPuzzleBoard() {
-      const board = document.getElementById('puzzleBoard');
-      board.innerHTML = '';
-      const imgUrl = IMAGES_DATA[currentSelected.imgKey];
-
-      puzzleTiles.forEach((tileIdx, currentPos) => {
-        const tile = document.createElement('div');
-        tile.className = 'tile';
-        
-        // 원본 3x3 위치 계산
-        const origRow = Math.floor(tileIdx / 3);
-        const origCol = tileIdx % 3;
-        
-        tile.style.backgroundImage = `url(${imgUrl})`;
-        tile.style.backgroundPosition = `-${origCol * 100}px -${origRow * 100}px`;
-
-        tile.onclick = () => onTileClick(currentPos);
-        board.appendChild(tile);
-      });
+    function getSlotXY(slotIdx) {
+      const col = slotIdx % 3;
+      const row = Math.floor(slotIdx / 3);
+      return { x: col * 102, y: row * 102 };
     }
 
-    function onTileClick(pos) {
-      const tilesElements = document.querySelectorAll('.tile');
+    function renderDragBoard() {
+      const board = document.getElementById('puzzleBoard');
+      board.innerHTML = '';
+      const svgUrl = 'data:image/svg+xml;utf8,' + encodeURIComponent(CREATURE_SVGS[currentSelected.key]);
 
-      if (firstSelectedTile === null) {
-        firstSelectedTile = pos;
-        tilesElements[pos].classList.add('selected');
-      } else {
-        // 교환 로직
-        const prev = firstSelectedTile;
-        tilesElements[prev].classList.remove('selected');
-        
-        if (prev !== pos) {
-          const temp = puzzleTiles[prev];
-          puzzleTiles[prev] = puzzleTiles[pos];
-          puzzleTiles[pos] = temp;
-          renderPuzzleBoard();
-          checkPuzzleComplete();
-        }
-        firstSelectedTile = null;
+      for (let slot = 0; slot < 9; slot++) {
+        const tileId = positions[slot];
+        const tile = document.createElement('div');
+        tile.className = 'tile';
+        tile.dataset.slot = slot;
+        tile.dataset.tileId = tileId;
+
+        const origCol = tileId % 3;
+        const origRow = Math.floor(tileId / 3);
+        tile.style.backgroundImage = `url("${svgUrl}")`;
+        tile.style.backgroundPosition = `-${origCol * 100}px -${origRow * 100}px`;
+
+        const pos = getSlotXY(slot);
+        tile.style.left = `${pos.x}px`;
+        tile.style.top = `${pos.y}px`;
+
+        // 포인터 드래그 이벤트 바인딩
+        tile.addEventListener('pointerdown', onPointerDown);
+        board.appendChild(tile);
       }
     }
 
-    function checkPuzzleComplete() {
-      const isComplete = puzzleTiles.every((val, idx) => val === idx);
-      if (isComplete) {
-        speak(`정답! 멋진 ${currentSelected.name} 퍼즐 완성!`);
+    function onPointerDown(e) {
+      if (isDragging) return;
+      isDragging = true;
+      dragEl = e.currentTarget;
+      dragSlotIdx = parseInt(dragEl.dataset.slot, 10);
+
+      startX = e.clientX;
+      startY = e.clientY;
+      origLeft = parseFloat(dragEl.style.left);
+      origTop = parseFloat(dragEl.style.top);
+
+      dragEl.classList.add('dragging');
+      dragEl.setPointerCapture(e.pointerId);
+
+      dragEl.addEventListener('pointermove', onPointerMove);
+      dragEl.addEventListener('pointerup', onPointerUp);
+      dragEl.addEventListener('pointercancel', onPointerUp);
+    }
+
+    function onPointerMove(e) {
+      if (!isDragging || !dragEl) return;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      dragEl.style.left = `${origLeft + dx}px`;
+      dragEl.style.top = `${origTop + dy}px`;
+    }
+
+    function onPointerUp(e) {
+      if (!isDragging || !dragEl) return;
+
+      dragEl.removeEventListener('pointermove', onPointerMove);
+      dragEl.removeEventListener('pointerup', onPointerUp);
+      dragEl.removeEventListener('pointercancel', onPointerUp);
+      dragEl.releasePointerCapture(e.pointerId);
+
+      const boardRect = document.getElementById('puzzleBoard').getBoundingClientRect();
+      const dropX = e.clientX - boardRect.left;
+      const dropY = e.clientY - boardRect.top;
+
+      let targetSlot = -1;
+      // 드롭 위치 계산 (가장 가까운 슬롯)
+      if (dropX >= 0 && dropX <= 306 && dropY >= 0 && dropY <= 306) {
+        const col = Math.min(2, Math.max(0, Math.floor(dropX / 102)));
+        const row = Math.min(2, Math.max(0, Math.floor(dropY / 102)));
+        targetSlot = row * 3 + col;
+      }
+
+      dragEl.classList.remove('dragging');
+
+      if (targetSlot !== -1 && targetSlot !== dragSlotIdx) {
+        // 교환 로직
+        const otherEl = document.querySelector(`.tile[data-slot="${targetSlot}"]`);
+        
+        // 데이터 배열 교체
+        const temp = positions[dragSlotIdx];
+        positions[dragSlotIdx] = positions[targetSlot];
+        positions[targetSlot] = temp;
+
+        // 슬롯 속성 및 위치 갱신
+        dragEl.dataset.slot = targetSlot;
+        otherEl.dataset.slot = dragSlotIdx;
+
+        const newTargetPos = getSlotXY(targetSlot);
+        const newOriginPos = getSlotXY(dragSlotIdx);
+
+        dragEl.style.left = `${newTargetPos.x}px`;
+        dragEl.style.top = `${newTargetPos.y}px`;
+        otherEl.style.left = `${newOriginPos.x}px`;
+        otherEl.style.top = `${newOriginPos.y}px`;
+
+        checkComplete();
+      } else {
+        // 원위치 복귀
+        dragEl.style.left = `${origLeft}px`;
+        dragEl.style.top = `${origTop}px`;
+      }
+
+      isDragging = false;
+      dragEl = null;
+    }
+
+    function checkComplete() {
+      const isDone = positions.every((val, idx) => val === idx);
+      if (isDone) {
+        speak(`정답! 멋진 ${currentSelected.name} 완성! 참 잘했어요!`);
         document.getElementById('puzzleCompleteMsg').style.display = 'block';
         setTimeout(() => {
           document.getElementById('puzzleOverlay').style.display = 'none';
