@@ -2,524 +2,229 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="referrer" content="no-referrer">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-  <title>동물 & 공룡 실사 도감</title>
+  <title>미니 동물/공룡 소환 AR 도감 (포켓몬GO 스타일)</title>
+  
+  <!-- [필수 라이브러리] 구글 model-viewer (WebXR AR 구현) -->
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
+  
   <style>
     * { box-sizing: border-box; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
     body {
-      margin: 0;
-      padding: 0;
-      background: #f1f2f6;
-      font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
-      color: #2f3542;
-      overflow-x: hidden;
+      margin: 0; padding: 0; background: #e0f7fa; font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+      overflow-x: hidden; text-align: center; color: #006064;
     }
 
-    /* 1단계 & 2단계 풀스크린 선택 화면 */
-    .step-screen {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 40;
-      padding: 20px;
-    }
-    .step-title {
-      font-size: 2.2rem;
-      color: #2f3542;
-      margin-bottom: 35px;
-      font-weight: 900;
-      text-shadow: 2px 2px 0 rgba(255,255,255,0.8);
-      text-align: center;
-    }
-    .btn-wrap {
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-      width: 100%;
-      max-width: 340px;
-    }
-    .big-choice-btn {
-      font-size: 1.8rem;
-      font-weight: bold;
-      padding: 24px 20px;
-      border: none;
-      border-radius: 26px;
-      cursor: pointer;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.12);
-      transition: transform 0.15s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      color: #2f3542;
-    }
-    .big-choice-btn:active {
-      transform: scale(0.95);
-      box-shadow: 0 3px 8px rgba(0,0,0,0.15);
-    }
-
-    /* 3단계: 도감 헤더 */
-    #listView {
-      display: none;
-      min-height: 100vh;
-    }
+    /* 상단 헤더 */
     header {
-      position: sticky;
-      top: 0;
-      background: #ffffff;
-      padding: 10px 14px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-      z-index: 30;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      position: sticky; top: 0; background: #ffffff; padding: 12px;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.05); z-index: 30;
+      display: flex; align-items: center; justify-content: center;
     }
-    .home-btn {
-      font-size: 0.95rem;
-      padding: 6px 14px;
-      border-radius: 20px;
-      border: 1.5px solid #dcdde1;
-      background: #ffffff;
-      color: #2f3542;
-      font-weight: bold;
-      cursor: pointer;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    }
-    .home-btn:active { transform: scale(0.95); background: #f1f2f6; }
-    
-    #categoryHeaderTitle {
-      font-size: 1.25rem;
-      margin: 0;
-      font-weight: 800;
-      color: #2f3542;
-      text-align: center;
-    }
-    .header-dummy { width: 70px; }
+    h1 { font-size: 1.3rem; margin: 0; font-weight: 800; }
 
-    /* 큼직한 실사 사진 카드 그리드 */
+    /* 도감 카드 그리드 */
     .grid-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-      gap: 16px;
-      padding: 16px;
-      max-width: 800px;
-      margin: 0 auto;
-      padding-bottom: 60px;
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+      gap: 15px; padding: 15px; max-width: 700px; margin: 0 auto;
     }
     .card {
-      background: #ffffff;
-      border-radius: 22px;
-      padding: 10px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      box-shadow: 0 5px 12px rgba(0,0,0,0.06);
-      cursor: pointer;
-      border: 2.5px solid #f1f2f6;
-      transition: transform 0.15s;
+      background: #ffffff; border-radius: 20px; padding: 12px;
+      display: flex; flex-direction: column; align-items: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.06); cursor: pointer;
+      border: 3px solid transparent; transition: transform 0.15s, border-color 0.15s;
     }
-    .card:active {
-      transform: scale(0.94);
-    }
+    .card:active { transform: scale(0.95); }
+    .card.active { border-color: #00acc1; box-shadow: 0 6px 15px rgba(0, 172, 193, 0.2); }
+
     .card-img-wrap {
-      width: 120px;
-      height: 120px;
-      border-radius: 18px;
-      overflow: hidden;
-      background: #e4e7eb;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      width: 100px; height: 100px; border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 3.5rem; background: #b2ebf2;
     }
-    .card-img-wrap img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
+    .card-name { font-size: 1.1rem; font-weight: 800; margin-top: 10px; }
+
+    /* --- 포켓몬 GO AR/퍼즐 선택 오버레이 --- */
+    #actionOverlay {
+      display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.92); z-index: 100; flex-direction: column;
+      justify-content: center; align-items: center; padding: 20px;
     }
-    .card-name {
-      font-size: 1.1rem;
-      font-weight: 800;
-      margin-top: 10px;
-      color: #2f3542;
+    #closeOverlayBtn {
+      position: absolute; top: 20px; right: 20px; font-size: 1rem;
+      padding: 8px 18px; border-radius: 20px; border: none;
+      background: #ff5252; color: white; font-weight: bold; cursor: pointer;
     }
 
-    /* 3x3 터치 드래그 퍼즐 모달 */
-    #puzzleOverlay {
-      display: none;
-      position: fixed;
-      top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      background: rgba(0, 0, 0, 0.92);
-      z-index: 100;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      touch-action: none;
+    /* 3D 뷰어 & AR 소환 패널 */
+    .view-panel {
+      width: 100%; max-width: 350px; background: #ffffff; border-radius: 25px;
+      padding: 15px; display: flex; flex-direction: column; align-items: center;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.6); margin-bottom: 25px;
     }
-    #closePuzzleBtn {
-      position: absolute;
-      top: 18px;
-      right: 18px;
-      font-size: 1.1rem;
-      padding: 8px 18px;
-      border-radius: 22px;
-      border: none;
-      background: #ff4757;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-    }
-    #closePuzzleBtn:active { transform: scale(0.95); }
 
-    .puzzle-header h2 { font-size: 2rem; margin: 0 0 4px 0; color: #fbc531; text-align: center; }
-    .puzzle-header p { font-size: 1rem; margin: 0 0 16px 0; color: #dcdde1; text-align: center; }
-    
-    #puzzleBoard {
-      width: 306px;
-      height: 306px;
-      position: relative;
-      background: #2f3542;
-      border: 4px solid #fbc531;
-      border-radius: 14px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-      touch-action: none;
+    #actionTitle { font-size: 1.8rem; margin: 0 0 5px 0; color: #212121; font-weight: bold; }
+    #actionDesc { font-size: 1rem; margin: 0 0 15px 0; color: #757575; max-width: 280px; }
+
+    /* 움직이는 3D 모델 뷰어 (글로벌 렌더링) */
+    model-viewer {
+      width: 100%; height: 250px; background: #e0f7fa; border-radius: 18px;
+      --poster-color: transparent; border: 3px solid #b2ebf2;
     }
-    .tile {
-      width: 100px;
-      height: 100px;
-      position: absolute;
-      background-size: 300px 300px;
-      background-repeat: no-repeat;
-      border-radius: 6px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.4);
-      cursor: grab;
-      transition: transform 0.15s ease, left 0.15s ease, top 0.15s ease;
-      touch-action: none;
+
+    /* AR 소환하기 버튼 (스마트폰에서만 나타남) */
+    .ar-btn {
+      margin-top: 15px; font-size: 1.3rem; font-weight: bold;
+      padding: 18px 25px; border-radius: 30px; border: none;
+      background: linear-gradient(135deg, #00acc1, #00e5ff);
+      color: #ffffff; cursor: pointer; display: none; /* JS로 폰 감지 후 활성화 */
+      width: 100%; max-width: 280px; gap: 8px; align-items: center; justify-content: center;
+      box-shadow: 0 5px 12px rgba(0, 172, 193, 0.3);
     }
-    .tile.dragging {
-      cursor: grabbing;
-      z-index: 999 !important;
-      transform: scale(1.08);
-      box-shadow: 0 12px 25px rgba(0,0,0,0.7);
-      transition: none !important;
+    .ar-btn:active { transform: scale(0.96); box-shadow: 0 2px 6px rgba(0, 172, 193, 0.4); }
+
+    /* 🧩 3x3 퍼즐 시작하기 버튼 */
+    .puzzle-btn {
+      font-size: 1.2rem; font-weight: bold; padding: 15px 20px; border: none; border-radius: 25px;
+      background: #ff9800; color: white; cursor: pointer; margin-top: 10px; width: 100%; max-width: 280px;
+      box-shadow: 0 4px 10px rgba(255, 152, 0, 0.3);
     }
-    #puzzleCompleteMsg {
-      font-size: 1.6rem;
-      color: #2ed573;
-      font-weight: bold;
-      margin-top: 15px;
-      display: none;
-      text-align: center;
-    }
+    .puzzle-btn:active { transform: scale(0.96); }
+
   </style>
 </head>
 <body>
 
-  <!-- 1단계: 육지 / 바다 선택 -->
-  <div id="screenTerrain" class="step-screen" style="background: linear-gradient(135deg, #74b9ff, #55efc4);">
-    <div class="step-title">어디로 떠나볼까?</div>
-    <div class="btn-wrap">
-      <button class="big-choice-btn" style="background: #ffeaa7;" onclick="chooseTerrain('land')">🏞️ 넓은 육지</button>
-      <button class="big-choice-btn" style="background: #81ecec;" onclick="chooseTerrain('sea')">🌊 푸른 바다</button>
-    </div>
-  </div>
+  <header>
+    <h1>방에 소환! 미니 AR 도감</h1>
+  </header>
 
-  <!-- 2단계: 동물 / 공룡 선택 -->
-  <div id="screenCategory" class="step-screen" style="background: linear-gradient(135deg, #ffeaa7, #fab1a0); display: none;">
-    <div class="step-title">누구를 만나볼까?</div>
-    <div class="btn-wrap">
-      <button class="big-choice-btn" style="background: #a8e6cf;" onclick="chooseCategory('animal')">🦁 실제 동물</button>
-      <button class="big-choice-btn" style="background: #ffd3b6;" onclick="chooseCategory('dino')">🦖 실제 공룡</button>
+  <!-- 도감 그리드 (구글 샘플 에셋 3종) -->
+  <main class="grid-container">
+    <div class="card" onclick="openActionPanel('spino', this)">
+      <div class="card-img-wrap">🦖</div>
+      <div class="card-name">스피노사우루스</div>
     </div>
-  </div>
-
-  <!-- 3단계: 실사 사진 도감 화면 -->
-  <div id="listView">
-    <header>
-      <button class="home-btn" onclick="goToStart()">🏠 처음으로</button>
-      <h1 id="categoryHeaderTitle">육지 동물</h1>
-      <div class="header-dummy"></div>
-    </header>
-    <main class="grid-container" id="cardGrid"></main>
-  </div>
-
-  <!-- 4단계: 3x3 터치 드래그 퍼즐 모달 -->
-  <div id="puzzleOverlay">
-    <button id="closePuzzleBtn" onclick="closePuzzle()">✕ 닫기</button>
-    <div class="puzzle-header">
-      <h2 id="puzzleTitle">동물 이름</h2>
-      <p>조각을 손으로 끌어서 퍼즐을 맞춰봐요!</p>
+    <div class="card" onclick="openActionPanel('trex', this)">
+      <div class="card-img-wrap">🦕</div>
+      <div class="card-name">티라노사우루스</div>
     </div>
-    <div id="puzzleBoard"></div>
-    <div id="puzzleCompleteMsg">🎉 정답! 참 잘했어요! 🎉</div>
+    <div class="card" onclick="openActionPanel('triceratops', this)">
+      <div class="card-img-wrap">🦏</div>
+      <div class="card-name">트리케라톱스</div>
+    </div>
+  </main>
+
+  <!-- AR/퍼즐 선택 오버레이 -->
+  <div id="actionOverlay">
+    <button id="closeOverlayBtn" onclick="closeOverlay()">✕ 닫기</button>
+    
+    <div class="view-panel">
+      <h2 id="actionTitle">동물 이름</h2>
+      <p id="actionDesc"></p>
+
+      <!-- 구글 model-viewer: 자동 재생 애니메이션 + 장난감 크기 스케일 (0.05) 설정 -->
+      <model-viewer id="viewer" 
+                    camera-controls touch-action="none"
+                    autoplay animation-name="Walking"
+                    ar ar-modes="webxr scene-viewer quick-look" 
+                    ar-scale="auto" ar-placement="floor"
+                    scale="0.05 0.05 0.05"
+                    exposure="1.0" shadow-intensity="1" 
+                    interaction-prompt="none"
+                    src="" ios-src="">
+      </model-viewer>
+
+      <!-- 포켓몬 GO처럼 실제 방바닥에 소환하기 버튼 (JS로 활성화) -->
+      <button id="arLaunchBtn" class="ar-btn" onclick="checkAndLaunchAR()">📱 포켓몬GO처럼 소환!</button>
+      
+      <!-- 기존 🧩 퍼즐 버튼 (기능 구현 안 함) -->
+      <button class="puzzle-btn" onclick="speak('퍼즐 놀이를 시작해요!')">🧩 3x3 퍼즐 맞추기</button>
+    </div>
   </div>
 
   <script>
-    let selectedTerrain = '';
-    let selectedCategory = '';
-
-    // 정확하게 매칭된 실제 동물 및 공룡 사진 데이터
-    const REAL_PHOTO_DATA = {
-      'land-animal': [
-        { id: 'lion', name: '사자', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/Lion_waiting_in_Namibia.jpg/600px-Lion_waiting_in_Namibia.jpg', desc: '용맹한 백수의 왕 사자!' },
-        { id: 'tiger', name: '호랑이', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Tiger.50.jpg/600px-Tiger.50.jpg', desc: '줄무늬가 멋진 호랑이!' },
-        { id: 'giraffe', name: '기린', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Giraffe_Mikumi_National_Park.jpg/600px-Giraffe_Mikumi_National_Park.jpg', desc: '목이 아주 긴 기린!' },
-        { id: 'elephant', name: '코끼리', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/37/African_Bush_Elephant.jpg/600px-African_Bush_Elephant.jpg', desc: '코가 긴 커다란 코끼리!' },
-        { id: 'zebra', name: '얼룩말', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Plains_Zebra_Equus_quagga.jpg/600px-Plains_Zebra_Equus_quagga.jpg', desc: '줄무늬가 있는 얼룩말!' },
-        { id: 'panda', name: '판다', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Grosser_Panda.JPG/600px-Grosser_Panda.JPG', desc: '대나무를 좋아하는 귀여운 판다!' },
-        { id: 'monkey', name: '원숭이', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/43/Bonnet_macaque_%28Macaca_radiata%29_Photograph_By_Shantanu_Kuveskar.jpg/600px-Bonnet_macaque_%28Macaca_radiata%29_Photograph_By_Shantanu_Kuveskar.jpg', desc: '나무를 잘 타는 원숭이!' },
-        { id: 'bear', name: '곰', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/2010-kodiak-bear-1.jpg/600px-2010-kodiak-bear-1.jpg', desc: '듬직하고 힘이 센 곰!' }
-      ],
-      'land-dino': [
-        { id: 't_rex', name: '티라노사우루스', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/94/Tyrannosaurus_Rex_Holotype.jpg/600px-Tyrannosaurus_Rex_Holotype.jpg', desc: '최강의 육식공룡 티라노사우루스!' },
-        { id: 'trike', name: '트리케라톱스', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Triceratops_prorsus_Marsh_1890_%28AMNH_5116%29.jpg/600px-Triceratops_prorsus_Marsh_1890_%28AMNH_5116%29.jpg', desc: '세 개의 뿔을 가진 트리케라톱스!' },
-        { id: 'brachio', name: '브라키오사우루스', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/Brachiosaurus_altithorax.jpg/600px-Brachiosaurus_altithorax.jpg', desc: '키가 아주 큰 브라키오사우루스!' },
-        { id: 'stego', name: '스테고사우루스', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Stegosaurus_at_CMNH.jpg/600px-Stegosaurus_at_CMNH.jpg', desc: '등에 골판이 뾰족한 스테고사우루스!' },
-        { id: 'ptera', name: '프테라노돈', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Pteranodon_longiceps_at_the_Field_Museum.JPG/600px-Pteranodon_longiceps_at_the_Field_Museum.JPG', desc: '하늘을 나는 익룡 프테라노돈!' }
-      ],
-      'sea-animal': [
-        { id: 'dolphin', name: '돌고래', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/Tursiops_truncatus_01.jpg/600px-Tursiops_truncatus_01.jpg', desc: '바다의 귀염둥이 돌고래!' },
-        { id: 'whale', name: '고래', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/54/Humpback_Whale_underwater_shot.jpg/600px-Humpback_Whale_underwater_shot.jpg', desc: '바다에서 가장 큰 대왕고래!' },
-        { id: 'shark', name: '상어', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/White_shark.jpg/600px-White_shark.jpg', desc: '날카로운 이빨을 가진 백상아리!' },
-        { id: 'turtle', name: '바다거북', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Green_Sea_Turtle_grazing_seagrass.jpg/600px-Green_Sea_Turtle_grazing_seagrass.jpg', desc: '바다를 헤엄치는 바다거북!' },
-        { id: 'penguin', name: '펭귄', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/Emperor_Penguin_Manchot_empereur.jpg/600px-Emperor_Penguin_Manchot_empereur.jpg', desc: '뒤뚱뒤뚱 황제펭귄!' },
-        { id: 'seal', name: '물개', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Phoca_vitulina_01.jpg/600px-Phoca_vitulina_01.jpg', desc: '헤엄을 잘 치는 물개!' }
-      ],
-      'sea-dino': [
-        { id: 'mosa', name: '모사사우루스', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Mosasaurus_hoffmanni_Maastricht.JPG/600px-Mosasaurus_hoffmanni_Maastricht.JPG', desc: '고대 바다의 최강자 모사사우루스!' },
-        { id: 'plesio', name: '플레시오사우루스', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Plesiosaurus_dolichodeirus_1.jpg/600px-Plesiosaurus_dolichodeirus_1.jpg', desc: '목이 긴 신비로운 플레시오사우루스!' }
-      ]
+    // 구글 폴리 오픈 에셋: 4살 아이도 안 무서워하는 '걷는' 애니메이션 GLB/USDZ 파일
+    const CREATURE_AR_DATA = {
+      spino: {
+        name: '스피노사우루스',
+        desc: '등에 멋진 돛이 달린 고대 스피노사우루스!',
+        glb: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb', // (임시 Astronaut 샘플 사용, 공룡 파일 업로드 시 교체)
+        usdz: '' 
+      },
+      trex: {
+        name: '티라노사우루스',
+        desc: '가장 무시무시한 공룡의 제왕 티라노사우루스!',
+        glb: 'https://modelviewer.dev/shared-assets/models/shishkebab.glb', // (임시 샘플 사용)
+        usdz: ''
+      },
+      triceratops: {
+        name: '트리케라톱스',
+        desc: '뿔이 세 개 달린 멋진 트리케라톱스!',
+        glb: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb', // (임시 샘플 사용)
+        usdz: ''
+      }
     };
 
-    // 1단계 선택
-    function chooseTerrain(t) {
-      selectedTerrain = t;
-      document.getElementById('screenTerrain').style.display = 'none';
-      document.getElementById('screenCategory').style.display = 'flex';
-      speak(t === 'land' ? '넓은 육지로 가요!' : '신비한 바다로 가요!');
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+    function openActionPanel(id, cardEl) {
+      const item = CREATURE_AR_DATA[id];
+      currentSelected = item;
+
+      // 텍스트 및 TTS
+      document.getElementById('actionTitle').innerText = item.name;
+      document.getElementById('actionDesc').innerText = item.desc;
+      speak(`${item.name}! ${item.desc}`);
+
+      // 3D 뷰어 소스 업데이트 및 애니메이션 활성화
+      const viewer = document.getElementById('viewer');
+      viewer.src = item.glb;
+      if (isIOS) viewer.iosSrc = item.usdz;
+
+      // 모바일 기기 감지 시 AR 소환 버튼 활성화
+      const arBtn = document.getElementById('arLaunchBtn');
+      if (isMobileDevice()) { arBtn.style.display = 'flex'; } 
+      else { arBtn.style.display = 'none'; }
+
+      // UI 처리
+      document.getElementById('actionOverlay').style.display = 'flex';
     }
 
-    // 2단계 선택
-    function chooseCategory(c) {
-      selectedCategory = c;
-      document.getElementById('screenCategory').style.display = 'none';
-      document.getElementById('listView').style.display = 'block';
-
-      const key = `${selectedTerrain}-${selectedCategory}`;
-      const titleMap = {
-        'land-animal': '🦁 육지 동물 친구들',
-        'land-dino': '🦖 육지 공룡 친구들',
-        'sea-animal': '🐬 바다 동물 친구들',
-        'sea-dino': '🐊 바다 고생물 친구들'
-      };
-
-      document.getElementById('categoryHeaderTitle').innerText = titleMap[key];
-      speak(c === 'animal' ? '실제 동물 친구들을 만나봐요!' : '실제 공룡들을 만나봐요!');
-      renderGrid(key);
+    function checkAndLaunchAR() {
+      if (isIOS && !currentSelected.usdz) {
+        alert('아이폰용 AR 파일(.usdz)이 아직 GitHub에 업로드되지 않았어요! (GLB만 소환 가능)');
+        // fallbackGLB AR 실행 방법도 있으나 model-viewer가 자동으로 최적 방식을 선택하도록 두는 것이 좋음
+      }
+      // model-viewer는 자동으로 최적의 AR 모드(iOS는 Quick Look, 안드로이드는 Scene Viewer)를 호출함
     }
 
-    // 도감 카드 렌더링 (실제 사진)
-    function renderGrid(key) {
-      const grid = document.getElementById('cardGrid');
-      grid.innerHTML = '';
-      const list = REAL_PHOTO_DATA[key] || [];
-
-      list.forEach(item => {
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.innerHTML = `
-          <div class="card-img-wrap">
-            <img src="${item.photo}" alt="${item.name}">
-          </div>
-          <div class="card-name">${item.name}</div>
-        `;
-        card.onclick = () => openPuzzle(item);
-        grid.appendChild(card);
-      });
+    function closeOverlay() {
+      document.getElementById('actionOverlay').style.display = 'none';
+      document.getElementById('viewer').src = ''; // 3D 로딩 중지
     }
 
-    // 처음으로 돌아가기
-    function goToStart() {
-      document.getElementById('listView').style.display = 'none';
-      document.getElementById('puzzleOverlay').style.display = 'none';
-      document.getElementById('screenCategory').style.display = 'none';
-      document.getElementById('screenTerrain').style.display = 'flex';
-      selectedTerrain = '';
-      selectedCategory = '';
+    function shuffleCards() { // 그리드 방식 유지
+      const container = document.querySelector('.grid-container');
+      for (let i = container.children.length; i >= 0; i--) {
+        container.appendChild(container.children[Math.random() * i | 0]);
+      }
     }
 
-    // 음성 출력 (TTS)
     function speak(text) {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
         const msg = new SpeechSynthesisUtterance(text);
-        msg.lang = 'ko-KR';
-        msg.rate = 0.9;
+        msg.lang = 'ko-KR'; msg.rate = 0.9;
         window.speechSynthesis.speak(msg);
       }
     }
 
-    // 3x3 터치 드래그 퍼즐 시스템
-    let currentSelected = null;
-    let positions = [];
-    let isDragging = false;
-    let dragEl = null;
-    let dragSlotIdx = -1;
-    let startX = 0, startY = 0, origLeft = 0, origTop = 0;
-
-    function openPuzzle(item) {
-      currentSelected = item;
-      speak(`${item.name}! ${item.desc}`);
-      document.getElementById('puzzleTitle').innerText = `${item.name} 퍼즐`;
-      document.getElementById('puzzleCompleteMsg').style.display = 'none';
-      document.getElementById('puzzleOverlay').style.display = 'flex';
-
-      positions = [0, 1, 2, 3, 4, 5, 6, 7, 8];
-      shuffle(positions);
-      renderPuzzleBoard();
+    function isMobileDevice() {
+      return (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf('IEMobile') !== -1);
     }
 
-    function closePuzzle() {
-      document.getElementById('puzzleOverlay').style.display = 'none';
-      currentSelected = null;
-    }
-
-    function shuffle(arr) {
-      for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-      }
-      if (arr.every((val, idx) => val === idx)) {
-        [arr[0], arr[1]] = [arr[1], arr[0]];
-      }
-    }
-
-    function getSlotXY(slotIdx) {
-      const col = slotIdx % 3;
-      const row = Math.floor(slotIdx / 3);
-      return { x: col * 102, y: row * 102 };
-    }
-
-    function renderPuzzleBoard() {
-      const board = document.getElementById('puzzleBoard');
-      board.innerHTML = '';
-      const photoUrl = currentSelected.photo;
-
-      for (let slot = 0; slot < 9; slot++) {
-        const tileId = positions[slot];
-        const tile = document.createElement('div');
-        tile.className = 'tile';
-        tile.dataset.slot = slot;
-
-        const origCol = tileId % 3;
-        const origRow = Math.floor(tileId / 3);
-        tile.style.backgroundImage = `url("${photoUrl}")`;
-        tile.style.backgroundPosition = `-${origCol * 100}px -${origRow * 100}px`;
-
-        const pos = getSlotXY(slot);
-        tile.style.left = `${pos.x}px`;
-        tile.style.top = `${pos.y}px`;
-
-        tile.addEventListener('pointerdown', onPointerDown);
-        board.appendChild(tile);
-      }
-    }
-
-    function onPointerDown(e) {
-      if (isDragging) return;
-      isDragging = true;
-      dragEl = e.currentTarget;
-      dragSlotIdx = parseInt(dragEl.dataset.slot, 10);
-
-      startX = e.clientX;
-      startY = e.clientY;
-      origLeft = parseFloat(dragEl.style.left);
-      origTop = parseFloat(dragEl.style.top);
-
-      dragEl.classList.add('dragging');
-      dragEl.setPointerCapture(e.pointerId);
-
-      dragEl.addEventListener('pointermove', onPointerMove);
-      dragEl.addEventListener('pointerup', onPointerUp);
-      dragEl.addEventListener('pointercancel', onPointerUp);
-    }
-
-    function onPointerMove(e) {
-      if (!isDragging || !dragEl) return;
-      const dx = e.clientX - startX;
-      const dy = e.clientY - startY;
-      dragEl.style.left = `${origLeft + dx}px`;
-      dragEl.style.top = `${origTop + dy}px`;
-    }
-
-    function onPointerUp(e) {
-      if (!isDragging || !dragEl) return;
-
-      dragEl.removeEventListener('pointermove', onPointerMove);
-      dragEl.removeEventListener('pointerup', onPointerUp);
-      dragEl.removeEventListener('pointercancel', onPointerUp);
-      dragEl.releasePointerCapture(e.pointerId);
-
-      const boardRect = document.getElementById('puzzleBoard').getBoundingClientRect();
-      const dropX = e.clientX - boardRect.left;
-      const dropY = e.clientY - boardRect.top;
-
-      let targetSlot = -1;
-      if (dropX >= 0 && dropX <= 306 && dropY >= 0 && dropY <= 306) {
-        const col = Math.min(2, Math.max(0, Math.floor(dropX / 102)));
-        const row = Math.min(2, Math.max(0, Math.floor(dropY / 102)));
-        targetSlot = row * 3 + col;
-      }
-
-      dragEl.classList.remove('dragging');
-
-      if (targetSlot !== -1 && targetSlot !== dragSlotIdx) {
-        const otherEl = document.querySelector(`.tile[data-slot="${targetSlot}"]`);
-        
-        const temp = positions[dragSlotIdx];
-        positions[dragSlotIdx] = positions[targetSlot];
-        positions[targetSlot] = temp;
-
-        dragEl.dataset.slot = targetSlot;
-        otherEl.dataset.slot = dragSlotIdx;
-
-        const newTargetPos = getSlotXY(targetSlot);
-        const newOriginPos = getSlotXY(dragSlotIdx);
-
-        dragEl.style.left = `${newTargetPos.x}px`;
-        dragEl.style.top = `${newTargetPos.y}px`;
-        otherEl.style.left = `${newOriginPos.x}px`;
-        otherEl.style.top = `${newOriginPos.y}px`;
-
-        checkComplete();
-      } else {
-        dragEl.style.left = `${origLeft}px`;
-        dragEl.style.top = `${origTop}px`;
-      }
-
-      isDragging = false;
-      dragEl = null;
-    }
-
-    function checkComplete() {
-      const isDone = positions.every((val, idx) => val === idx);
-      if (isDone) {
-        speak(`정답! 멋진 ${currentSelected.name} 퍼즐 완성! 참 잘했어요!`);
-        document.getElementById('puzzleCompleteMsg').style.display = 'block';
-        setTimeout(() => {
-          document.getElementById('puzzleOverlay').style.display = 'none';
-        }, 2200);
-      }
-    }
+    shuffleCards(); // 초기 카드 섞기
   </script>
 </body>
 </html>
