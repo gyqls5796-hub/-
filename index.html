@@ -145,7 +145,7 @@
       display: block;
     }
     .card-name {
-      font-size: 1.15rem;
+      font-size: 1.1rem;
       font-weight: 800;
       margin-top: 10px;
       color: #2f3542;
@@ -238,7 +238,7 @@
     <div class="step-title">누구를 만나볼까?</div>
     <div class="btn-wrap">
       <button class="big-choice-btn" style="background: #a8e6cf;" onclick="chooseCategory('animal')">🦁 실제 동물</button>
-      <button class="big-choice-btn" style="background: #ffd3b6;" onclick="chooseCategory('dino')">🦖 거대한 공룡</button>
+      <button class="big-choice-btn" style="background: #ffd3b6;" onclick="chooseCategory('dino')">🦖 실제 공룡</button>
     </div>
   </div>
 
@@ -267,38 +267,36 @@
     let selectedTerrain = '';
     let selectedCategory = '';
 
-    // 실제 고화질 동물 및 공룡 사진 데이터
+    // 정확하게 매칭된 실제 동물 및 공룡 사진 데이터
     const REAL_PHOTO_DATA = {
       'land-animal': [
-        { id: 'lion', name: '사자', photo: 'https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=400&h=400&fit=crop&q=80', desc: '용맹한 백수의 왕 사자!' },
-        { id: 'tiger', name: '호랑이', photo: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&h=400&fit=crop&q=80', desc: '줄무늬가 멋진 호랑이!' },
-        { id: 'giraffe', name: '기린', photo: 'https://images.unsplash.com/photo-1538121669313-d150b4001ab9?w=400&h=400&fit=crop&q=80', desc: '목이 아주 긴 기린!' },
-        { id: 'elephant', name: '코끼리', photo: 'https://images.unsplash.com/photo-1557050543-4d5f4e07ef46?w=400&h=400&fit=crop&q=80', desc: '코가 긴 커다란 코끼리!' },
-        { id: 'zebra', name: '얼룩말', photo: 'https://images.unsplash.com/photo-1526095179574-86e545346ae6?w=400&h=400&fit=crop&q=80', desc: '검은색 흰색 줄무늬 얼룩말!' },
-        { id: 'panda', name: '판다', photo: 'https://images.unsplash.com/photo-1527118732049-c88155f2107c?w=400&h=400&fit=crop&q=80', desc: '대나무를 좋아하는 귀여운 판다!' },
-        { id: 'monkey', name: '원숭이', photo: 'https://images.unsplash.com/photo-1540573133985-87b6da6d54a9?w=400&h=400&fit=crop&q=80', desc: '장난꾸러기 원숭이!' },
-        { id: 'bear', name: '곰', photo: 'https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?w=400&h=400&fit=crop&q=80', desc: '듬직하고 커다란 곰!' }
+        { id: 'lion', name: '사자', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/Lion_waiting_in_Namibia.jpg/600px-Lion_waiting_in_Namibia.jpg', desc: '용맹한 백수의 왕 사자!' },
+        { id: 'tiger', name: '호랑이', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Tiger.50.jpg/600px-Tiger.50.jpg', desc: '줄무늬가 멋진 호랑이!' },
+        { id: 'giraffe', name: '기린', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Giraffe_Mikumi_National_Park.jpg/600px-Giraffe_Mikumi_National_Park.jpg', desc: '목이 아주 긴 기린!' },
+        { id: 'elephant', name: '코끼리', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/37/African_Bush_Elephant.jpg/600px-African_Bush_Elephant.jpg', desc: '코가 긴 커다란 코끼리!' },
+        { id: 'zebra', name: '얼룩말', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Plains_Zebra_Equus_quagga.jpg/600px-Plains_Zebra_Equus_quagga.jpg', desc: '줄무늬가 있는 얼룩말!' },
+        { id: 'panda', name: '판다', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Grosser_Panda.JPG/600px-Grosser_Panda.JPG', desc: '대나무를 좋아하는 귀여운 판다!' },
+        { id: 'monkey', name: '원숭이', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/43/Bonnet_macaque_%28Macaca_radiata%29_Photograph_By_Shantanu_Kuveskar.jpg/600px-Bonnet_macaque_%28Macaca_radiata%29_Photograph_By_Shantanu_Kuveskar.jpg', desc: '나무를 잘 타는 원숭이!' },
+        { id: 'bear', name: '곰', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/2010-kodiak-bear-1.jpg/600px-2010-kodiak-bear-1.jpg', desc: '듬직하고 힘이 센 곰!' }
       ],
       'land-dino': [
-        { id: 't_rex', name: '티라노사우루스', photo: 'https://images.unsplash.com/photo-1568832359672-e36cf5d74f54?w=400&h=400&fit=crop&q=80', desc: '공룡의 제왕 티라노사우루스!' },
-        { id: 'trike', name: '트리케라톱스', photo: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&h=400&fit=crop&q=80', desc: '뿔이 세 개 달린 트리케라톱스!' },
-        { id: 'brachio', name: '브라키오사우루스', photo: 'https://images.unsplash.com/photo-1525869916826-972885c91c1e?w=400&h=400&fit=crop&q=80', desc: '키가 아주 큰 브라키오사우루스!' },
-        { id: 'stego', name: '스테고사우루스', photo: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=400&h=400&fit=crop&q=80', desc: '등에 뾰족한 골판이 있는 스테고사우루스!' },
-        { id: 'ptera', name: '프테라노돈', photo: 'https://images.unsplash.com/photo-1606857521015-7f9fcf423740?w=400&h=400&fit=crop&q=80', desc: '하늘을 나는 익룡 프테라노돈!' },
-        { id: 'raptor', name: '벨로키랍토르', photo: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=400&h=400&fit=crop&q=80', desc: '발이 빠른 사냥꾼 벨로키랍토르!' }
+        { id: 't_rex', name: '티라노사우루스', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/94/Tyrannosaurus_Rex_Holotype.jpg/600px-Tyrannosaurus_Rex_Holotype.jpg', desc: '최강의 육식공룡 티라노사우루스!' },
+        { id: 'trike', name: '트리케라톱스', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Triceratops_prorsus_Marsh_1890_%28AMNH_5116%29.jpg/600px-Triceratops_prorsus_Marsh_1890_%28AMNH_5116%29.jpg', desc: '세 개의 뿔을 가진 트리케라톱스!' },
+        { id: 'brachio', name: '브라키오사우루스', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/Brachiosaurus_altithorax.jpg/600px-Brachiosaurus_altithorax.jpg', desc: '키가 아주 큰 브라키오사우루스!' },
+        { id: 'stego', name: '스테고사우루스', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Stegosaurus_at_CMNH.jpg/600px-Stegosaurus_at_CMNH.jpg', desc: '등에 골판이 뾰족한 스테고사우루스!' },
+        { id: 'ptera', name: '프테라노돈', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Pteranodon_longiceps_at_the_Field_Museum.JPG/600px-Pteranodon_longiceps_at_the_Field_Museum.JPG', desc: '하늘을 나는 익룡 프테라노돈!' }
       ],
       'sea-animal': [
-        { id: 'dolphin', name: '돌고래', photo: 'https://images.unsplash.com/photo-1607153333879-c174d265f1d2?w=400&h=400&fit=crop&q=80', desc: '바다의 귀염둥이 돌고래!' },
-        { id: 'whale', name: '고래', photo: 'https://images.unsplash.com/photo-1568430467505-5925a74e5028?w=400&h=400&fit=crop&q=80', desc: '바다에서 가장 큰 대왕고래!' },
-        { id: 'shark', name: '상어', photo: 'https://images.unsplash.com/photo-1560275619-4662e36fa65c?w=400&h=400&fit=crop&q=80', desc: '날카로운 이빨을 가진 상어!' },
-        { id: 'turtle', name: '바다거북', photo: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&h=400&fit=crop&q=80', desc: '바다를 헤엄치는 바다거북!' },
-        { id: 'penguin', name: '펭귄', photo: 'https://images.unsplash.com/photo-1598439210625-5067c578f3f6?w=400&h=400&fit=crop&q=80', desc: '뒤뚱뒤뚱 귀여운 펭귄!' },
-        { id: 'seal', name: '물개', photo: 'https://images.unsplash.com/photo-1582298538104-fe2e74c27f59?w=400&h=400&fit=crop&q=80', desc: '매끈매끈 수영 잘하는 물개!' }
+        { id: 'dolphin', name: '돌고래', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/Tursiops_truncatus_01.jpg/600px-Tursiops_truncatus_01.jpg', desc: '바다의 귀염둥이 돌고래!' },
+        { id: 'whale', name: '고래', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/54/Humpback_Whale_underwater_shot.jpg/600px-Humpback_Whale_underwater_shot.jpg', desc: '바다에서 가장 큰 대왕고래!' },
+        { id: 'shark', name: '상어', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/White_shark.jpg/600px-White_shark.jpg', desc: '날카로운 이빨을 가진 백상아리!' },
+        { id: 'turtle', name: '바다거북', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Green_Sea_Turtle_grazing_seagrass.jpg/600px-Green_Sea_Turtle_grazing_seagrass.jpg', desc: '바다를 헤엄치는 바다거북!' },
+        { id: 'penguin', name: '펭귄', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/Emperor_Penguin_Manchot_empereur.jpg/600px-Emperor_Penguin_Manchot_empereur.jpg', desc: '뒤뚱뒤뚱 황제펭귄!' },
+        { id: 'seal', name: '물개', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Phoca_vitulina_01.jpg/600px-Phoca_vitulina_01.jpg', desc: '헤엄을 잘 치는 물개!' }
       ],
       'sea-dino': [
-        { id: 'mosa', name: '모사사우루스', photo: 'https://images.unsplash.com/photo-1570481662006-a3a1374699e8?w=400&h=400&fit=crop&q=80', desc: '고대 바다의 최강자 모사사우루스!' },
-        { id: 'plesio', name: '플레시오사우루스', photo: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&h=400&fit=crop&q=80', desc: '목이 긴 바다파충류 플레시오사우루스!' },
-        { id: 'megalodon', name: '메갈로돈', photo: 'https://images.unsplash.com/photo-1560275619-4662e36fa65c?w=400&h=400&fit=crop&q=80', desc: '거대한 고대 상어 메갈로돈!' }
+        { id: 'mosa', name: '모사사우루스', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Mosasaurus_hoffmanni_Maastricht.JPG/600px-Mosasaurus_hoffmanni_Maastricht.JPG', desc: '고대 바다의 최강자 모사사우루스!' },
+        { id: 'plesio', name: '플레시오사우루스', photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Plesiosaurus_dolichodeirus_1.jpg/600px-Plesiosaurus_dolichodeirus_1.jpg', desc: '목이 긴 신비로운 플레시오사우루스!' }
       ]
     };
 
@@ -325,7 +323,7 @@
       };
 
       document.getElementById('categoryHeaderTitle').innerText = titleMap[key];
-      speak(c === 'animal' ? '실제 동물 친구들을 만나봐요!' : '거대한 공룡을 만나봐요!');
+      speak(c === 'animal' ? '실제 동물 친구들을 만나봐요!' : '실제 공룡들을 만나봐요!');
       renderGrid(key);
     }
 
@@ -340,7 +338,7 @@
         card.className = 'card';
         card.innerHTML = `
           <div class="card-img-wrap">
-            <img src="${item.photo}" alt="${item.name}" loading="lazy">
+            <img src="${item.photo}" alt="${item.name}">
           </div>
           <div class="card-name">${item.name}</div>
         `;
