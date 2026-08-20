@@ -5,20 +5,57 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>동물 & 공룡 서식지 탐험</title>
   <style>
-    * { box-sizing: border-box; user-select: none; }
-    body { margin: 0; padding: 0; overflow: hidden; background: #111; font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; text-align: center; }
+    * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+    body { margin: 0; padding: 0; overflow: hidden; background: #1a1a1a; font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; text-align: center; }
     .screen { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-    .btn-container { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+    .btn-container { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; z-index: 10; }
     .game-btn { font-size: 1.8rem; padding: 18px 36px; border: none; border-radius: 20px; cursor: pointer; background: #ffe066; font-weight: bold; box-shadow: 0 6px #d4a000; transition: transform 0.1s; }
     .game-btn:active { transform: translateY(4px); box-shadow: 0 2px #d4a000; }
     canvas { display: block; touch-action: none; }
     
-    /* 퍼즐 팝업창 */
-    #puzzleOverlay { display: none; background: rgba(0, 0, 0, 0.85); color: white; z-index: 100; }
-    .puzzle-box { background: #2f3640; border-radius: 25px; padding: 30px; text-align: center; max-width: 90%; border: 3px solid #fbc531; }
-    .puzzle-piece { font-size: 6rem; width: 140px; height: 140px; line-height: 140px; margin: 20px auto; background: #353b48; border-radius: 20px; cursor: pointer; border: 3px dashed #f5f6fa; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-    .puzzle-piece:active { transform: scale(0.95); }
-    #backBtn { position: absolute; top: 15px; left: 15px; z-index: 50; font-size: 1.1rem; padding: 10px 18px; border-radius: 12px; border: none; background: rgba(255,255,255,0.9); font-weight: bold; cursor: pointer; display: none; box-shadow: 0 3px 6px rgba(0,0,0,0.2); }
+    #backBtn { position: absolute; top: 15px; left: 15px; z-index: 50; font-size: 1.1rem; padding: 10px 18px; border-radius: 12px; border: none; background: rgba(255,255,255,0.9); font-weight: bold; cursor: pointer; display: none; box-shadow: 0 3px 6px rgba(0,0,0,0.3); }
+
+    /* 3x3 퍼즐 모달 */
+    #puzzleOverlay { display: none; background: rgba(0, 0, 0, 0.9); color: white; z-index: 100; flex-direction: column; justify-content: center; align-items: center; }
+    .puzzle-header { margin-bottom: 15px; }
+    .puzzle-header h2 { font-size: 2.2rem; margin: 0 0 5px 0; color: #fbc531; }
+    .puzzle-header p { font-size: 1.1rem; margin: 0; color: #dcdde1; }
+    
+    #puzzleBoard {
+      width: 300px;
+      height: 300px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 3px;
+      background: #444;
+      border: 4px solid #fbc531;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+    }
+    
+    .tile {
+      background-size: 300px 300px;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: transform 0.1s;
+    }
+    .tile.selected {
+      outline: 3px solid #ff4757;
+      transform: scale(0.96);
+    }
+    .tile.empty {
+      background: #2f3640 !important;
+      opacity: 0.3;
+    }
+    #puzzleCompleteMsg {
+      font-size: 1.8rem;
+      color: #2ed573;
+      font-weight: bold;
+      margin-top: 15px;
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -38,21 +75,22 @@
   <div id="screen2" class="screen" style="background: linear-gradient(135deg, #ffeaa7, #fab1a0); display: none;">
     <h1 style="font-size: 2.3rem; color: #2d3436; margin-bottom: 30px;">누구를 만나러 갈까?</h1>
     <div class="btn-container">
-      <button class="game-btn" onclick="selectCategory('animal')">🦁 동물 친구들</button>
-      <button class="game-btn" onclick="selectCategory('dino')">🦖 거대한 공룡</button>
+      <button class="game-btn" onclick="selectCategory('animal')">🦁 실제 동물</button>
+      <button class="game-btn" onclick="selectCategory('dino')">🦖 거대 공룡</button>
     </div>
   </div>
 
   <!-- 3단계: 서식지 캔버스 화면 -->
   <canvas id="gameCanvas" style="display: none;"></canvas>
 
-  <!-- 4단계: 퍼즐 팝업 -->
+  <!-- 4단계: 3x3 퍼즐 창 -->
   <div id="puzzleOverlay" class="screen">
-    <div class="puzzle-box">
-      <h2 id="puzzleTitle" style="font-size: 2rem; margin: 0; color: #fbc531;"></h2>
-      <div id="puzzleTarget" class="puzzle-piece" onclick="completePuzzle()">❓</div>
-      <p id="puzzleGuide" style="font-size: 1.2rem; color: #dcdde1; margin: 0;">상자를 눌러 퍼즐을 완성해봐요!</p>
+    <div class="puzzle-header">
+      <h2 id="puzzleTitle">동물 이름</h2>
+      <p id="puzzleSubtitle">조각 2개를 터치해서 자리를 바꿔 퍼즐을 맞춰보세요!</p>
     </div>
+    <div id="puzzleBoard"></div>
+    <div id="puzzleCompleteMsg">🎉 완성! 참 잘했어요! 🎉</div>
   </div>
 
   <script>
@@ -63,6 +101,30 @@
     let habitats = [];
     let currentSelected = null;
     let animId = null;
+
+    // 실제 동물 & 공룡 고화질 사진 URL 목록
+    const IMAGES_DATA = {
+      lion: "https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=400&q=80",
+      giraffe: "https://images.unsplash.com/photo-1538121669313-d150b4001ab9?w=400&q=80",
+      monkey: "https://images.unsplash.com/photo-1540573133985-87b6da6d54a9?w=400&q=80",
+      t_rex: "https://images.unsplash.com/photo-1568832359672-e36cf5d74f54?w=400&q=80",
+      trike: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&q=80",
+      pteranodon: "https://images.unsplash.com/photo-1525869916826-972885c91c1e?w=400&q=80",
+      dolphin: "https://images.unsplash.com/photo-1607153333879-c174d265f1d2?w=400&q=80",
+      whale: "https://images.unsplash.com/photo-1568430467505-5925a74e5028?w=400&q=80",
+      turtle: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&q=80",
+      plesio: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&q=80",
+      mosa: "https://images.unsplash.com/photo-1570481662006-a3a1374699e8?w=400&q=80"
+    };
+
+    // 이미지 객체 캐싱
+    const loadedImages = {};
+    for (let key in IMAGES_DATA) {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.src = IMAGES_DATA[key];
+      loadedImages[key] = img;
+    }
 
     function resize() {
       canvas.width = window.innerWidth;
@@ -87,7 +149,7 @@
       terrain = t;
       document.getElementById('screen1').style.display = 'none';
       document.getElementById('screen2').style.display = 'flex';
-      speak(t === 'land' ? '넓은 육지로 떠나요!' : '신비한 바다로 떠나요!');
+      speak(t === 'land' ? '넓은 육지로 가요!' : '신비한 바다로 가요!');
     }
 
     function selectCategory(c) {
@@ -95,121 +157,134 @@
       document.getElementById('screen2').style.display = 'none';
       canvas.style.display = 'block';
       document.getElementById('backBtn').style.display = 'block';
-      speak(c === 'animal' ? '동물 친구들을 찾아봐요!' : '멋진 공룡을 찾아봐요!');
+      speak(c === 'animal' ? '동물들을 찾아봐요!' : '공룡을 찾아봐요!');
       initHabitatAndEntities();
       if (animId) cancelAnimationFrame(animId);
       gameLoop();
     }
 
-    // 서식지 구역 및 개체 초기화
+    // 서식지 및 동물 배치
     function initHabitatAndEntities() {
       const w = canvas.width, h = canvas.height;
       const zoneH = h / 3;
 
       if (terrain === 'land' && category === 'animal') {
         habitats = [
-          { name: '🌾 사바나 초원', color: '#e6c875', decor: '🌴', y: 0, h: zoneH },
-          { name: '⛰️ 바위 언덕', color: '#bcaaa4', decor: '🪨', y: zoneH, h: zoneH },
-          { name: '🌴 울창한 정글', color: '#81c784', decor: '🌿', y: zoneH * 2, h: zoneH }
+          { name: '🌾 사바나 초원 (기린)', grad: ['#e4c373', '#cf9b3a'], y: 0, h: zoneH },
+          { name: '⛰️ 바위 언덕 (사자)', grad: ['#bcaaa4', '#8d6e63'], y: zoneH, h: zoneH },
+          { name: '🌴 울창한 정글 (원숭이)', grad: ['#81c784', '#388e3c'], y: zoneH * 2, h: zoneH }
         ];
         entities = [
-          { name: '기린', icon: '🦒', x: w * 0.5, y: zoneH * 0.5, vx: 0.6, vy: 0.2, minX: 60, maxX: w - 60, minY: 60, maxY: zoneH - 60 },
-          { name: '사자', icon: '🦁', x: w * 0.4, y: zoneH * 1.5, vx: -0.5, vy: 0.3, minX: 60, maxX: w - 60, minY: zoneH + 60, maxY: zoneH * 2 - 60 },
-          { name: '원숭이', icon: '🐵', x: w * 0.6, y: zoneH * 2.5, vx: 0.8, vy: -0.4, minX: 60, maxX: w - 60, minY: zoneH * 2 + 60, maxY: h - 60 }
+          { name: '기린', imgKey: 'giraffe', x: w * 0.5, y: zoneH * 0.5, vx: 0.6, vy: 0.2, minX: 60, maxX: w - 60, minY: 60, maxY: zoneH - 60 },
+          { name: '사자', imgKey: 'lion', x: w * 0.4, y: zoneH * 1.5, vx: -0.5, vy: 0.3, minX: 60, maxX: w - 60, minY: zoneH + 60, maxY: zoneH * 2 - 60 },
+          { name: '원숭이', imgKey: 'monkey', x: w * 0.6, y: zoneH * 2.5, vx: 0.8, vy: -0.4, minX: 60, maxX: w - 60, minY: zoneH * 2 + 60, maxY: h - 60 }
         ];
       } else if (terrain === 'land' && category === 'dino') {
         habitats = [
-          { name: '🌋 뜨거운 화산지대', color: '#d35400', decor: '🔥', y: 0, h: zoneH },
-          { name: '🌲 백악기 원시숲', color: '#27ae60', decor: '🌳', y: zoneH, h: zoneH },
-          { name: '🏜️ 협곡과 평원', color: '#e58e26', decor: '🌵', y: zoneH * 2, h: zoneH }
+          { name: '🌋 하늘과 화산 (프테라노돈)', grad: ['#e17055', '#d63031'], y: 0, h: zoneH },
+          { name: '🌲 백악기 숲 (티라노사우루스)', grad: ['#2ed573', '#1e8449'], y: zoneH, h: zoneH },
+          { name: '🏜️ 붉은 협곡 (트리케라톱스)', grad: ['#e58e26', '#b71540'], y: zoneH * 2, h: zoneH }
         ];
         entities = [
-          { name: '프테라노돈', icon: '🦅', x: w * 0.3, y: zoneH * 0.4, vx: 0.9, vy: 0.3, minX: 60, maxX: w - 60, minY: 50, maxY: zoneH - 50 },
-          { name: '티라노사우루스', icon: '🦖', x: w * 0.5, y: zoneH * 1.5, vx: -0.6, vy: 0.2, minX: 60, maxX: w - 60, minY: zoneH + 60, maxY: zoneH * 2 - 60 },
-          { name: '트리케라톱스', icon: '🦏', x: w * 0.7, y: zoneH * 2.5, vx: 0.5, vy: -0.3, minX: 60, maxX: w - 60, minY: zoneH * 2 + 60, maxY: h - 60 }
+          { name: '프테라노돈', imgKey: 'pteranodon', x: w * 0.3, y: zoneH * 0.5, vx: 0.9, vy: 0.3, minX: 60, maxX: w - 60, minY: 60, maxY: zoneH - 60 },
+          { name: '티라노사우루스', imgKey: 't_rex', x: w * 0.5, y: zoneH * 1.5, vx: -0.6, vy: 0.2, minX: 60, maxX: w - 60, minY: zoneH + 60, maxY: zoneH * 2 - 60 },
+          { name: '트리케라톱스', imgKey: 'trike', x: w * 0.7, y: zoneH * 2.5, vx: 0.5, vy: -0.3, minX: 60, maxX: w - 60, minY: zoneH * 2 + 60, maxY: h - 60 }
         ];
       } else if (terrain === 'sea' && category === 'animal') {
         habitats = [
-          { name: '🏖️ 맑은 산호초 연안', color: '#48dbfb', decor: '🪸', y: 0, h: zoneH },
-          { name: '🌊 넓고 푸른 바다', color: '#0abde3', decor: '🫧', y: zoneH, h: zoneH },
-          { name: '🌌 신비한 깊은 심해', color: '#10ac84', decor: '🪨', y: zoneH * 2, h: zoneH }
+          { name: '🏖️ 맑은 산호초 (돌고래)', grad: ['#74b9ff', '#0984e3'], y: 0, h: zoneH },
+          { name: '🌊 푸른 바다 (바다거북)', grad: ['#00cec9', '#0097e6'], y: zoneH, h: zoneH },
+          { name: '🌌 깊은 심해 (고래)', grad: ['#192a56', '#0c2461'], y: zoneH * 2, h: zoneH }
         ];
         entities = [
-          { name: '돌고래', icon: '🐬', x: w * 0.3, y: zoneH * 0.5, vx: 0.8, vy: 0.3, minX: 60, maxX: w - 60, minY: 60, maxY: zoneH - 60 },
-          { name: '바다거북', icon: '🐢', x: w * 0.7, y: zoneH * 1.5, vx: -0.4, vy: 0.2, minX: 60, maxX: w - 60, minY: zoneH + 60, maxY: zoneH * 2 - 60 },
-          { name: '고래', icon: '🐳', x: w * 0.5, y: zoneH * 2.5, vx: 0.6, vy: -0.2, minX: 60, maxX: w - 60, minY: zoneH * 2 + 60, maxY: h - 60 }
+          { name: '돌고래', imgKey: 'dolphin', x: w * 0.3, y: zoneH * 0.5, vx: 0.8, vy: 0.3, minX: 60, maxX: w - 60, minY: 60, maxY: zoneH - 60 },
+          { name: '바다거북', imgKey: 'turtle', x: w * 0.7, y: zoneH * 1.5, vx: -0.4, vy: 0.2, minX: 60, maxX: w - 60, minY: zoneH + 60, maxY: zoneH * 2 - 60 },
+          { name: '고래', imgKey: 'whale', x: w * 0.5, y: zoneH * 2.5, vx: 0.6, vy: -0.2, minX: 60, maxX: w - 60, minY: zoneH * 2 + 60, maxY: h - 60 }
         ];
-      } else { // sea dino
+      } else {
         habitats = [
-          { name: '☀️ 따뜻한 고대 바다', color: '#00d2d3', decor: '🌊', y: 0, h: zoneH * 1.5 },
-          { name: '🌑 깊은 해저 협곡', color: '#2e86de', decor: '🪨', y: zoneH * 1.5, h: zoneH * 1.5 }
+          { name: '☀️ 얕은 고대 바다 (플레시오사우루스)', grad: ['#00d2d3', '#2e86de'], y: 0, h: zoneH * 1.5 },
+          { name: '🌑 깊은 해저 계곡 (모사사우루스)', grad: ['#2e86de', '#0c2461'], y: zoneH * 1.5, h: zoneH * 1.5 }
         ];
         entities = [
-          { name: '플레시오사우루스', icon: '🦕', x: w * 0.4, y: zoneH * 0.7, vx: 0.7, vy: 0.3, minX: 60, maxX: w - 60, minY: 60, maxY: zoneH * 1.5 - 60 },
-          { name: '모사사우루스', icon: '🐊', x: w * 0.6, y: zoneH * 2.2, vx: -0.7, vy: -0.3, minX: 60, maxX: w - 60, minY: zoneH * 1.5 + 60, maxY: h - 60 }
+          { name: '플레시오사우루스', imgKey: 'plesio', x: w * 0.4, y: zoneH * 0.75, vx: 0.7, vy: 0.3, minX: 60, maxX: w - 60, minY: 60, maxY: zoneH * 1.5 - 60 },
+          { name: '모사사우루스', imgKey: 'mosa', x: w * 0.6, y: zoneH * 2.2, vx: -0.7, vy: -0.3, minX: 60, maxX: w - 60, minY: zoneH * 1.5 + 60, maxY: h - 60 }
         ];
       }
     }
 
-    // 메인 그리기 루프
+    // 메인 루프 (서식지 배경 및 원형 사진 렌더링)
     function gameLoop() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // 1. 서식지 구역별 배경 그리기
-      habitats.forEach((hab, idx) => {
-        ctx.fillStyle = hab.color;
+      habitats.forEach(hab => {
+        const grd = ctx.createLinearGradient(0, hab.y, 0, hab.y + hab.h);
+        grd.addColorStop(0, hab.grad[0]);
+        grd.addColorStop(1, hab.grad[1]);
+        ctx.fillStyle = grd;
         ctx.fillRect(0, hab.y, canvas.width, hab.h);
 
-        // 구역 구분선
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
-        ctx.lineWidth = 3;
+        // 구분선
+        ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+        ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(0, hab.y);
         ctx.lineTo(canvas.width, hab.y);
         ctx.stroke();
 
-        // 서식지 이름 텍스트 라벨
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-        ctx.font = 'bold 20px Apple SD Gothic Neo, sans-serif';
+        // 서식지 텍스트
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        ctx.shadowBlur = 4;
+        ctx.font = 'bold 19px Apple SD Gothic Neo, sans-serif';
         ctx.textAlign = 'left';
         ctx.fillText(hab.name, 20, hab.y + 35);
-
-        // 배경 장식 아이콘
-        ctx.font = '36px Arial';
-        ctx.fillText(hab.decor, canvas.width - 50, hab.y + 45);
-        ctx.fillText(hab.decor, 30, hab.y + hab.h - 20);
+        ctx.shadowBlur = 0;
       });
 
-      // 2. 동물 / 공룡 그리기 및 순찰 이동
       entities.forEach(e => {
         e.x += e.vx;
         e.y += e.vy;
 
-        // 서식지 구역 바운더리 체크
         if (e.x < e.minX || e.x > e.maxX) e.vx *= -1;
         if (e.y < e.minY || e.y > e.maxY) e.vy *= -1;
 
-        // 그림자
-        ctx.fillStyle = 'rgba(0,0,0,0.15)';
+        const img = loadedImages[e.imgKey];
+        const r = 45; // 원형 이미지 반지름
+
+        ctx.save();
         ctx.beginPath();
-        ctx.ellipse(e.x, e.y + 25, 28, 10, 0, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.arc(e.x, e.y, r, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.shadowColor = 'rgba(0,0,0,0.4)';
+        ctx.shadowBlur = 8;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 4;
+        ctx.stroke();
+        ctx.clip();
 
-        // 동물 이모지 & 이름 텍스트
-        ctx.font = '65px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(e.icon, e.x, e.y);
+        if (img && img.complete) {
+          ctx.drawImage(img, e.x - r, e.y - r, r * 2, r * 2);
+        } else {
+          ctx.fillStyle = '#ccc';
+          ctx.fill();
+        }
+        ctx.restore();
 
+        // 이름 표기
+        ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 16px Apple SD Gothic Neo, sans-serif';
-        ctx.fillStyle = '#2d3436';
-        ctx.fillText(e.name, e.x, e.y + 42);
+        ctx.textAlign = 'center';
+        ctx.shadowColor = 'rgba(0,0,0,0.8)';
+        ctx.shadowBlur = 4;
+        ctx.fillText(e.name, e.x, e.y + r + 20);
+        ctx.shadowBlur = 0;
       });
 
       animId = requestAnimationFrame(gameLoop);
     }
 
-    // 화면 터치 판정
+    // 터치 클릭 감지
     canvas.addEventListener('pointerdown', (evt) => {
       const rect = canvas.getBoundingClientRect();
       const clickX = evt.clientX - rect.left;
@@ -217,8 +292,8 @@
 
       entities.forEach(e => {
         const dist = Math.hypot(e.x - clickX, e.y - clickY);
-        if (dist < 60) {
-          openPuzzle(e);
+        if (dist < 55) {
+          open3x3Puzzle(e);
         }
       });
     });
@@ -229,30 +304,96 @@
         window.speechSynthesis.cancel();
         const msg = new SpeechSynthesisUtterance(text);
         msg.lang = 'ko-KR';
-        msg.rate = 0.85;
+        msg.rate = 0.9;
         window.speechSynthesis.speak(msg);
       }
     }
 
-    // 퍼즐 창 열기
-    function openPuzzle(entity) {
+    // 3x3 퍼즐 시스템 (터치로 조각 맞바꾸기)
+    let puzzleTiles = [];
+    let firstSelectedTile = null;
+
+    function open3x3Puzzle(entity) {
       currentSelected = entity;
-      speak(`찾았다! ${entity.name}! 퍼즐을 맞춰볼까요?`);
-      document.getElementById('puzzleTitle').innerText = `${entity.name}`;
-      document.getElementById('puzzleTarget').innerText = '❓';
-      document.getElementById('puzzleGuide').innerText = '상자를 터치해서 모습을 밝혀봐요!';
+      speak(`이 동물은 ${entity.name}! 3곱하기 3 퍼즐을 맞춰봐요!`);
+      document.getElementById('puzzleTitle').innerText = `${entity.name} 맞추기`;
+      document.getElementById('puzzleCompleteMsg').style.display = 'none';
       document.getElementById('puzzleOverlay').style.display = 'flex';
+
+      const board = document.getElementById('puzzleBoard');
+      board.innerHTML = '';
+      firstSelectedTile = null;
+
+      // 0부터 8까지의 인덱스 배열 생성 후 섞기
+      puzzleTiles = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+      shuffle(puzzleTiles);
+
+      renderPuzzleBoard();
     }
 
-    // 퍼즐 완성
-    function completePuzzle() {
-      if (!currentSelected) return;
-      document.getElementById('puzzleTarget').innerText = currentSelected.icon;
-      document.getElementById('puzzleGuide').innerText = `와! 멋진 ${currentSelected.name}(이) 완성되었어요!`;
-      speak(`정답! ${currentSelected.name}! 참 잘했어요!`);
-      setTimeout(() => {
-        document.getElementById('puzzleOverlay').style.display = 'none';
-      }, 1600);
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      // 이미 다 맞춰진 상태 방지
+      if (arr.every((val, idx) => val === idx)) {
+        [arr[0], arr[1]] = [arr[1], arr[0]];
+      }
+    }
+
+    function renderPuzzleBoard() {
+      const board = document.getElementById('puzzleBoard');
+      board.innerHTML = '';
+      const imgUrl = IMAGES_DATA[currentSelected.imgKey];
+
+      puzzleTiles.forEach((tileIdx, currentPos) => {
+        const tile = document.createElement('div');
+        tile.className = 'tile';
+        
+        // 원본 3x3 위치 계산
+        const origRow = Math.floor(tileIdx / 3);
+        const origCol = tileIdx % 3;
+        
+        tile.style.backgroundImage = `url(${imgUrl})`;
+        tile.style.backgroundPosition = `-${origCol * 100}px -${origRow * 100}px`;
+
+        tile.onclick = () => onTileClick(currentPos);
+        board.appendChild(tile);
+      });
+    }
+
+    function onTileClick(pos) {
+      const tilesElements = document.querySelectorAll('.tile');
+
+      if (firstSelectedTile === null) {
+        firstSelectedTile = pos;
+        tilesElements[pos].classList.add('selected');
+      } else {
+        // 교환 로직
+        const prev = firstSelectedTile;
+        tilesElements[prev].classList.remove('selected');
+        
+        if (prev !== pos) {
+          const temp = puzzleTiles[prev];
+          puzzleTiles[prev] = puzzleTiles[pos];
+          puzzleTiles[pos] = temp;
+          renderPuzzleBoard();
+          checkPuzzleComplete();
+        }
+        firstSelectedTile = null;
+      }
+    }
+
+    function checkPuzzleComplete() {
+      const isComplete = puzzleTiles.every((val, idx) => val === idx);
+      if (isComplete) {
+        speak(`정답! 멋진 ${currentSelected.name} 퍼즐 완성!`);
+        document.getElementById('puzzleCompleteMsg').style.display = 'block';
+        setTimeout(() => {
+          document.getElementById('puzzleOverlay').style.display = 'none';
+        }, 2200);
+      }
     }
   </script>
 </body>
