@@ -6,6 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
   <title>미니 동물 & 공룡 3D AR 도감</title>
   
+  <!-- 튕김 없는 3D 렌더링 라이브러리 Three.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
   <style>
     * { box-sizing: border-box; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
     body {
@@ -94,16 +97,14 @@
     }
     .preview-box img { width: 100%; height: 100%; object-fit: cover; }
 
-    /* 아이폰 Safari Quick Look 직통 AR 링크 */
-    .ar-link-btn {
-      margin-top: 16px; font-size: 1.15rem; font-weight: bold;
+    .ar-custom-btn {
+      margin-top: 16px; font-size: 1.2rem; font-weight: bold;
       padding: 15px 20px; border-radius: 25px; border: none;
       background: linear-gradient(135deg, #00cec9, #0984e3);
       color: #ffffff; cursor: pointer; width: 100%; max-width: 280px;
-      box-shadow: 0 4px 12px rgba(9, 132, 227, 0.35); text-decoration: none;
-      display: flex; align-items: center; justify-content: center; gap: 8px;
+      box-shadow: 0 4px 12px rgba(9, 132, 227, 0.35);
     }
-    .ar-link-btn:active { transform: scale(0.96); }
+    .ar-custom-btn:active { transform: scale(0.96); }
 
     .puzzle-btn {
       font-size: 1.1rem; font-weight: bold; padding: 13px 20px; border: none; border-radius: 22px;
@@ -111,6 +112,36 @@
       box-shadow: 0 3px 8px rgba(255, 159, 67, 0.3);
     }
     .puzzle-btn:active { transform: scale(0.96); }
+
+    /* 5단계: 실시간 카메라 Web 3D AR 화면 */
+    #cameraARView {
+      display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: #000; z-index: 200; touch-action: none; overflow: hidden;
+    }
+    #cameraVideo { width: 100vw; height: 100vh; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 1; }
+    #threeCanvas { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 2; touch-action: none; }
+
+    .size-ctrl-box {
+      position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 12px; z-index: 210;
+    }
+    .size-btn {
+      font-size: 1.1rem; font-weight: bold; padding: 10px 16px; border-radius: 20px;
+      border: none; background: rgba(255,255,255,0.92); color: #2f3542; cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+    .size-btn:active { transform: scale(0.95); }
+
+    #closeCameraBtn {
+      position: absolute; top: 20px; right: 20px; z-index: 210;
+      font-size: 1.1rem; padding: 8px 18px; border-radius: 20px; border: none;
+      background: #ff4757; color: white; font-weight: bold; cursor: pointer;
+    }
+    .ar-guide-text {
+      position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%);
+      background: rgba(0,0,0,0.75); color: #fff; padding: 10px 20px; border-radius: 20px;
+      font-size: 0.95rem; z-index: 210; pointer-events: none; width: max-content;
+    }
 
     /* 3x3 퍼즐 모달 */
     #puzzleOverlay {
@@ -184,17 +215,27 @@
         <img id="panelPreviewImg" src="" alt="">
       </div>
 
-      <!-- 아이폰 튕김 방지 Apple AR Quick Look 태그 -->
-      <a id="arLaunchLink" rel="ar" href="" class="ar-link-btn" onclick="handleArClick(event)">
-        <img id="arLaunchThumb" src="" style="display:none;" alt="">
-        📱 방바닥에 3D 피규어 소환!
-      </a>
-
+      <button class="ar-custom-btn" onclick="openWeb3DAR()">📱 방바닥에 3D 피규어 소환!</button>
       <button class="puzzle-btn" onclick="startPuzzleFromPanel()">🧩 3x3 퍼즐 맞추기</button>
     </div>
   </div>
 
-  <!-- 5단계: 3x3 퍼즐 모달 -->
+  <!-- 5단계: 실시간 카메라 Web 3D AR 방바닥 소환 화면 -->
+  <div id="cameraARView">
+    <button id="closeCameraBtn" onclick="closeWeb3DAR()">✕ 닫기</button>
+    <video id="cameraVideo" autoplay playsinline muted></video>
+    <canvas id="threeCanvas"></canvas>
+
+    <div class="size-ctrl-box">
+      <button class="size-btn" onclick="adjustScale(0.8)">작게 ➖</button>
+      <button class="size-btn" onclick="rotateFigure()">돌리기 🔄</button>
+      <button class="size-btn" onclick="adjustScale(1.25)">크게 ➕</button>
+    </div>
+
+    <div class="ar-guide-text">손가락으로 드래그해서 방바닥 위치를 옮겨보세요!</div>
+  </div>
+
+  <!-- 6단계: 3x3 퍼즐 모달 -->
   <div id="puzzleOverlay">
     <button id="closePuzzleBtn" onclick="closePuzzle()">✕ 닫기</button>
     <div class="puzzle-header">
@@ -207,33 +248,33 @@
 
   <script>
     let selectedTerrain = '', selectedCategory = '', currentSelected = null;
+    let cameraStream = null;
 
-    // 내 GitHub 저장소 상대 경로 USDZ 연동
     const CREATURE_DATA = {
       'land-animal': [
-        { id: 'lion', name: '사자', file: 'lion.jpg', fallback: 'https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=400&h=400&fit=crop&q=80', emoji: '🦁', desc: '용맹한 백수의 왕 사자!', usdz: 'lion.usdz' },
-        { id: 'tiger', name: '호랑이', file: 'tiger.jpg', fallback: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&h=400&fit=crop&q=80', emoji: '🐯', desc: '줄무늬가 멋진 호랑이 친구!', usdz: 'lion.usdz' },
-        { id: 'giraffe', name: '기린', file: 'giraffe.jpg', fallback: 'https://images.unsplash.com/photo-1538121669313-d150b4001ab9?w=400&h=400&fit=crop&q=80', emoji: '🦒', desc: '목이 아주 긴 기린 친구!', usdz: 'lion.usdz' },
-        { id: 'elephant', name: '코끼리', file: 'elephant.jpg', fallback: 'https://images.unsplash.com/photo-1557050543-4d5f4e07ef46?w=400&h=400&fit=crop&q=80', emoji: '🐘', desc: '코가 긴 듬직한 코끼리!', usdz: 'lion.usdz' },
-        { id: 'zebra', name: '얼룩말', file: 'zebra.jpg', fallback: 'https://images.unsplash.com/photo-1526095179574-86e545346ae6?w=400&h=400&fit=crop&q=80', emoji: '🦓', desc: '달리기를 잘하는 얼룩말!', usdz: 'lion.usdz' },
-        { id: 'panda', name: '판다', file: 'panda.jpg', fallback: 'https://images.unsplash.com/photo-1527118732049-c88155f2107c?w=400&h=400&fit=crop&q=80', emoji: '🐼', desc: '대나무를 좋아하는 귀여운 판다!', usdz: 'lion.usdz' }
+        { id: 'lion', name: '사자', color: 0xe67e22, file: 'lion.jpg', fallback: 'https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=400&h=400&fit=crop&q=80', emoji: '🦁', desc: '용맹한 백수의 왕 사자!' },
+        { id: 'tiger', name: '호랑이', color: 0xd35400, file: 'tiger.jpg', fallback: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&h=400&fit=crop&q=80', emoji: '🐯', desc: '줄무늬가 멋진 호랑이 친구!' },
+        { id: 'giraffe', name: '기린', color: 0xf1c40f, file: 'giraffe.jpg', fallback: 'https://images.unsplash.com/photo-1538121669313-d150b4001ab9?w=400&h=400&fit=crop&q=80', emoji: '🦒', desc: '목이 아주 긴 기린 친구!' },
+        { id: 'elephant', name: '코끼리', color: 0x95a5a6, file: 'elephant.jpg', fallback: 'https://images.unsplash.com/photo-1557050543-4d5f4e07ef46?w=400&h=400&fit=crop&q=80', emoji: '🐘', desc: '코가 긴 듬직한 코끼리!' },
+        { id: 'zebra', name: '얼룩말', color: 0x2f3542, file: 'zebra.jpg', fallback: 'https://images.unsplash.com/photo-1526095179574-86e545346ae6?w=400&h=400&fit=crop&q=80', emoji: '🦓', desc: '달리기를 잘하는 얼룩말!' },
+        { id: 'panda', name: '판다', color: 0xffffff, file: 'panda.jpg', fallback: 'https://images.unsplash.com/photo-1527118732049-c88155f2107c?w=400&h=400&fit=crop&q=80', emoji: '🐼', desc: '대나무를 좋아하는 귀여운 판다!' }
       ],
       'land-dino': [
-        { id: 'trex', name: '티라노사우루스', file: 'trex.jpg', fallback: 'https://images.unsplash.com/photo-1568832359672-e36cf5d74f54?w=400&h=400&fit=crop&q=80', emoji: '🦖', desc: '공룡의 제왕 티라노사우루스!', usdz: 'trex.usdz' },
-        { id: 'trike', name: '트리케라톱스', file: 'trike.jpg', fallback: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&h=400&fit=crop&q=80', emoji: '🦏', desc: '뿔이 멋진 트리케라톱스!', usdz: 'trex.usdz' },
-        { id: 'brachio', name: '브라키오사우루스', file: 'brachio.jpg', fallback: 'https://images.unsplash.com/photo-1525869916826-972885c91c1e?w=400&h=400&fit=crop&q=80', emoji: '🦕', desc: '키가 아주 큰 브라키오사우루스!', usdz: 'trex.usdz' },
-        { id: 'stego', name: '스테고사우루스', file: 'stego.jpg', fallback: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=400&h=400&fit=crop&q=80', emoji: '🦎', desc: '등에 골판이 뾰족한 스테고사우루스!', usdz: 'trex.usdz' },
-        { id: 'ptera', name: '프테라노돈', file: 'ptera.jpg', fallback: 'https://images.unsplash.com/photo-1606857521015-7f9fcf423740?w=400&h=400&fit=crop&q=80', emoji: '🦅', desc: '하늘을 나는 멋진 프테라노돈!', usdz: 'trex.usdz' }
+        { id: 'trex', name: '티라노사우루스', color: 0x2ed573, file: 'trex.jpg', fallback: 'https://images.unsplash.com/photo-1568832359672-e36cf5d74f54?w=400&h=400&fit=crop&q=80', emoji: '🦖', desc: '공룡의 제왕 티라노사우루스!' },
+        { id: 'trike', name: '트리케라톱스', color: 0x1e8449, file: 'trike.jpg', fallback: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&h=400&fit=crop&q=80', emoji: '🦏', desc: '뿔이 멋진 트리케라톱스!' },
+        { id: 'brachio', name: '브라키오사우루스', color: 0x16a085, file: 'brachio.jpg', fallback: 'https://images.unsplash.com/photo-1525869916826-972885c91c1e?w=400&h=400&fit=crop&q=80', emoji: '🦕', desc: '키가 아주 큰 브라키오사우루스!' },
+        { id: 'stego', name: '스테고사우루스', color: 0xe67e22, file: 'stego.jpg', fallback: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=400&h=400&fit=crop&q=80', emoji: '🦎', desc: '등에 골판이 뾰족한 스테고사우루스!' },
+        { id: 'ptera', name: '프테라노돈', color: 0xe74c3c, file: 'ptera.jpg', fallback: 'https://images.unsplash.com/photo-1606857521015-7f9fcf423740?w=400&h=400&fit=crop&q=80', emoji: '🦅', desc: '하늘을 나는 멋진 프테라노돈!' }
       ],
       'sea-animal': [
-        { id: 'dolphin', name: '돌고래', file: 'dolphin.jpg', fallback: 'https://images.unsplash.com/photo-1607153333879-c174d265f1d2?w=400&h=400&fit=crop&q=80', emoji: '🐬', desc: '헤엄을 잘 치는 돌고래!', usdz: 'lion.usdz' },
-        { id: 'whale', name: '고래', file: 'whale.jpg', fallback: 'https://images.unsplash.com/photo-1568430467505-5925a74e5028?w=400&h=400&fit=crop&q=80', emoji: '🐳', desc: '바다에서 가장 큰 대왕고래!', usdz: 'lion.usdz' },
-        { id: 'shark', name: '상어', file: 'shark.jpg', fallback: 'https://images.unsplash.com/photo-1560275619-4662e36fa65c?w=400&h=400&fit=crop&q=80', emoji: '🦈', desc: '바다의 사냥꾼 백상아리!', usdz: 'lion.usdz' },
-        { id: 'turtle', name: '바다거북', file: 'turtle.jpg', fallback: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&h=400&fit=crop&q=80', emoji: '🐢', desc: '느릿느릿 귀여운 바다거북!', usdz: 'lion.usdz' }
+        { id: 'dolphin', name: '돌고래', color: 0x70a1ff, file: 'dolphin.jpg', fallback: 'https://images.unsplash.com/photo-1607153333879-c174d265f1d2?w=400&h=400&fit=crop&q=80', emoji: '🐬', desc: '헤엄을 잘 치는 돌고래!' },
+        { id: 'whale', name: '고래', color: 0x1e3799, file: 'whale.jpg', fallback: 'https://images.unsplash.com/photo-1568430467505-5925a74e5028?w=400&h=400&fit=crop&q=80', emoji: '🐳', desc: '바다에서 가장 큰 대왕고래!' },
+        { id: 'shark', name: '상어', color: 0x57606f, file: 'shark.jpg', fallback: 'https://images.unsplash.com/photo-1560275619-4662e36fa65c?w=400&h=400&fit=crop&q=80', emoji: '🦈', desc: '바다의 사냥꾼 백상아리!' },
+        { id: 'turtle', name: '바다거북', color: 0x2ed573, file: 'turtle.jpg', fallback: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&h=400&fit=crop&q=80', emoji: '🐢', desc: '느릿느릿 귀여운 바다거북!' }
       ],
       'sea-dino': [
-        { id: 'mosa', name: '모사사우루스', file: 'mosa.jpg', fallback: 'https://images.unsplash.com/photo-1570481662006-a3a1374699e8?w=400&h=400&fit=crop&q=80', emoji: '🐊', desc: '고대 바다의 최강자 모사사우루스!', usdz: 'trex.usdz' },
-        { id: 'plesio', name: '플레시오사우루스', file: 'plesio.jpg', fallback: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&h=400&fit=crop&q=80', emoji: '🦕', desc: '목이 긴 신비로운 플레시오사우루스!', usdz: 'trex.usdz' }
+        { id: 'mosa', name: '모사사우루스', color: 0x2f3542, file: 'mosa.jpg', fallback: 'https://images.unsplash.com/photo-1570481662006-a3a1374699e8?w=400&h=400&fit=crop&q=80', emoji: '🐊', desc: '고대 바다의 최강자 모사사우루스!' },
+        { id: 'plesio', name: '플레시오사우루스', color: 0x00cec9, file: 'plesio.jpg', fallback: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&h=400&fit=crop&q=80', emoji: '🦕', desc: '목이 긴 신비로운 플레시오사우루스!' }
       ]
     };
 
@@ -312,26 +353,178 @@
 
       const photoUrl = activePhotoUrls[item.id] || item.fallback;
       document.getElementById('panelPreviewImg').src = photoUrl;
-
-      // 튕김 없는 상대 경로 설정
-      const arLink = document.getElementById('arLaunchLink');
-      arLink.href = item.usdz;
-
       document.getElementById('actionOverlay').style.display = 'flex';
-    }
-
-    // AR 버튼 클릭 검증 (아이폰 Safari 전용)
-    function handleArClick(e) {
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-      if (!isIOS) {
-        e.preventDefault();
-        alert('이 기능은 아이폰(Safari) 또는 AR 지원 기기에서 방바닥에 직접 소환됩니다!');
-      }
     }
 
     function closeOverlay() {
       document.getElementById('actionOverlay').style.display = 'none';
     }
+
+    /* --- Three.js 무중단 Web 3D AR 엔진 --- */
+    let renderer, scene, camera, figureGroup, shadowMesh;
+    let animFrameId;
+
+    function initThreeScene() {
+      const canvas = document.getElementById('threeCanvas');
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.set(0, 1.2, 3.2);
+      camera.lookAt(0, 0, 0);
+
+      renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+      // 조명 설정
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
+      scene.add(ambientLight);
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
+      dirLight.position.set(2, 4, 3);
+      scene.add(dirLight);
+
+      // 바닥 그림자
+      const shadowGeo = new THREE.PlaneGeometry(1.4, 1.4);
+      const shadowMat = new THREE.MeshBasicMaterial({
+        color: 0x000000,
+        transparent: true,
+        opacity: 0.35,
+        depthWrite: false
+      });
+      shadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
+      shadowMesh.rotation.x = -Math.PI / 2;
+      shadowMesh.position.y = -0.6;
+      scene.add(shadowMesh);
+
+      figureGroup = new THREE.Group();
+      scene.add(figureGroup);
+    }
+
+    function build3DFigure(item) {
+      while(figureGroup.children.length > 0){ 
+        figureGroup.remove(figureGroup.children[0]); 
+      }
+
+      const mainMat = new THREE.MeshLambertMaterial({ color: item.color });
+      const whiteMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
+      const blackMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
+
+      // 몸통
+      const body = new THREE.Mesh(new THREE.SphereGeometry(0.45, 24, 24), mainMat);
+      body.position.y = 0;
+      figureGroup.add(body);
+
+      // 머리
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.35, 24, 24), mainMat);
+      head.position.set(0, 0.5, 0.2);
+      figureGroup.add(head);
+
+      // 눈
+      const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.06, 16, 16), blackMat);
+      eyeL.position.set(-0.13, 0.55, 0.5);
+      const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.06, 16, 16), blackMat);
+      eyeR.position.set(0.13, 0.55, 0.5);
+      figureGroup.add(eyeL);
+      figureGroup.add(eyeR);
+
+      // 귀 / 뿔
+      const earL = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.22, 16), mainMat);
+      earL.position.set(-0.22, 0.82, 0.15);
+      const earR = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.22, 16), mainMat);
+      earR.position.set(0.22, 0.82, 0.15);
+      figureGroup.add(earL);
+      figureGroup.add(earR);
+
+      figureGroup.position.set(0, 0, 0);
+      figureGroup.scale.set(1, 1, 1);
+    }
+
+    let clock = new THREE.Clock();
+    function animateThree() {
+      animFrameId = requestAnimationFrame(animateThree);
+      const t = clock.getElapsedTime();
+      
+      // 통통 튀는 바운스 애니메이션
+      if (figureGroup) {
+        figureGroup.position.y = Math.sin(t * 3.5) * 0.08;
+      }
+      if (shadowMesh) {
+        const s = 1.0 - Math.sin(t * 3.5) * 0.15;
+        shadowMesh.scale.set(s, s, s);
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    async function openWeb3DAR() {
+      document.getElementById('actionOverlay').style.display = 'none';
+      const arView = document.getElementById('cameraARView');
+      const video = document.getElementById('cameraVideo');
+      arView.style.display = 'block';
+
+      if (!renderer) initThreeScene();
+      build3DFigure(currentSelected);
+      clock.start();
+      animateThree();
+
+      speak(`방바닥에 귀여운 ${currentSelected.name} 소환 완료!`);
+
+      try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment' },
+          audio: false
+        });
+        video.srcObject = cameraStream;
+      } catch (err) {
+        alert('카메라 권한을 허용해 주시면 방바닥 위에 소환됩니다!');
+      }
+    }
+
+    function closeWeb3DAR() {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream = null;
+      }
+      if (animFrameId) cancelAnimationFrame(animFrameId);
+      document.getElementById('cameraARView').style.display = 'none';
+      document.getElementById('actionOverlay').style.display = 'flex';
+    }
+
+    function adjustScale(factor) {
+      if (figureGroup) {
+        const newScale = Math.min(2.2, Math.max(0.4, figureGroup.scale.x * factor));
+        figureGroup.scale.set(newScale, newScale, newScale);
+      }
+    }
+
+    function rotateFigure() {
+      if (figureGroup) figureGroup.rotation.y += Math.PI / 4;
+    }
+
+    // 터치 드래그 이동
+    let isTouching = false, touchStartX = 0, touchStartY = 0;
+    const canvasEl = document.getElementById('threeCanvas');
+
+    canvasEl.addEventListener('touchstart', (e) => {
+      isTouching = true;
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    });
+
+    window.addEventListener('touchmove', (e) => {
+      if (!isTouching || !figureGroup) return;
+      const dx = (e.touches[0].clientX - touchStartX) * 0.004;
+      const dy = (e.touches[0].clientY - touchStartY) * 0.004;
+      figureGroup.position.x += dx;
+      figureGroup.position.z += dy;
+      if (shadowMesh) {
+        shadowMesh.position.x += dx;
+        shadowMesh.position.z += dy;
+      }
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    });
+
+    window.addEventListener('touchend', () => { isTouching = false; });
 
     function goToStart() {
       document.getElementById('listView').style.display = 'none';
