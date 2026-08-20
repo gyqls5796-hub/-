@@ -4,11 +4,7 @@
   <meta charset="UTF-8">
   <meta name="referrer" content="no-referrer">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-  <title>동물 & 공룡 3D 생생 도감</title>
-  
-  <!-- [필수] 고화질 3D 렌더링 엔진 model-viewer -->
-  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
-  
+  <title>동물 & 공룡 생생 도감</title>
   <style>
     * { box-sizing: border-box; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
     body {
@@ -16,7 +12,7 @@
       color: #2f3542; overflow-x: hidden;
     }
 
-    /* 1단계 & 2단계 풀스크린 선택 */
+    /* 1단계 & 2단계 풀스크린 선택 화면 */
     .step-screen {
       position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
       display: flex; flex-direction: column; justify-content: center; align-items: center;
@@ -45,10 +41,10 @@
     .home-btn {
       font-size: 0.95rem; padding: 6px 14px; border-radius: 20px;
       border: 1.5px solid #dcdde1; background: #ffffff; color: #2f3542;
-      font-weight: bold; cursor: pointer;
+      font-weight: bold; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
     .home-btn:active { transform: scale(0.95); background: #f1f2f6; }
-    #categoryHeaderTitle { font-size: 1.25rem; margin: 0; font-weight: 800; color: #2f3542; }
+    #categoryHeaderTitle { font-size: 1.25rem; margin: 0; font-weight: 800; color: #2f3542; text-align: center; }
     .header-dummy { width: 70px; }
 
     .grid-container {
@@ -68,51 +64,12 @@
       font-size: 3.5rem;
     }
     .card-img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .card-name { font-size: 1.1rem; font-weight: 800; margin-top: 10px; color: #2f3542; }
+    .card-name { font-size: 1.15rem; font-weight: 800; margin-top: 10px; color: #2f3542; }
 
-    /* 4단계: 3D 생생 관찰 모달 */
-    #actionOverlay {
-      display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-      background: rgba(0,0,0,0.92); z-index: 100; flex-direction: column;
-      justify-content: center; align-items: center; padding: 16px;
-    }
-    #closeOverlayBtn {
-      position: absolute; top: 18px; right: 18px; font-size: 1.1rem;
-      padding: 8px 18px; border-radius: 22px; border: none;
-      background: #ff4757; color: white; font-weight: bold; cursor: pointer;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.5); z-index: 110;
-    }
-
-    .view-panel {
-      width: 100%; max-width: 360px; background: #ffffff; border-radius: 26px;
-      padding: 20px 16px; display: flex; flex-direction: column; align-items: center;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.6); position: relative;
-    }
-    #actionTitle { font-size: 1.8rem; margin: 0 0 4px 0; color: #2f3542; font-weight: bold; }
-    #actionDesc { font-size: 0.95rem; margin: 0 0 14px 0; color: #747d8c; text-align: center; }
-
-    /* 고화질 3D 인터랙티브 쇼룸 */
-    model-viewer {
-      width: 100%; height: 260px; background: radial-gradient(circle, #f1f2f6 0%, #dcdde1 100%);
-      border-radius: 20px; border: 2.5px solid #00cec9;
-      --poster-color: transparent;
-    }
-    .model-hint {
-      font-size: 0.85rem; color: #0984e3; font-weight: bold; margin-top: 6px;
-    }
-
-    .puzzle-btn {
-      font-size: 1.15rem; font-weight: bold; padding: 14px 20px; border: none; border-radius: 24px;
-      background: linear-gradient(135deg, #ff9f43, #ee5253); color: white; cursor: pointer;
-      margin-top: 14px; width: 100%; max-width: 280px;
-      box-shadow: 0 4px 12px rgba(238, 82, 83, 0.35);
-    }
-    .puzzle-btn:active { transform: scale(0.96); }
-
-    /* 5단계: 3x3 퍼즐 모달 */
+    /* 4단계: 3x3 터치 드래그 퍼즐 모달 */
     #puzzleOverlay {
       display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-      background: rgba(0, 0, 0, 0.92); z-index: 150; flex-direction: column;
+      background: rgba(0, 0, 0, 0.92); z-index: 100; flex-direction: column;
       justify-content: center; align-items: center; touch-action: none;
     }
     #closePuzzleBtn {
@@ -121,6 +78,8 @@
       background: #ff4757; color: white; font-weight: bold; cursor: pointer;
       box-shadow: 0 4px 10px rgba(0,0,0,0.5);
     }
+    #closePuzzleBtn:active { transform: scale(0.95); }
+
     .puzzle-header h2 { font-size: 2rem; margin: 0 0 4px 0; color: #fbc531; text-align: center; }
     .puzzle-header p { font-size: 1rem; margin: 0 0 16px 0; color: #dcdde1; text-align: center; }
     
@@ -143,7 +102,7 @@
 </head>
 <body>
 
-  <!-- 1단계: 육지 / 바다 -->
+  <!-- 1단계: 육지 / 바다 선택 -->
   <div id="screenTerrain" class="step-screen" style="background: linear-gradient(135deg, #74b9ff, #55efc4);">
     <div class="step-title">어디로 떠나볼까?</div>
     <div class="btn-wrap">
@@ -152,7 +111,7 @@
     </div>
   </div>
 
-  <!-- 2단계: 동물 / 공룡 -->
+  <!-- 2단계: 동물 / 공룡 선택 -->
   <div id="screenCategory" class="step-screen" style="background: linear-gradient(135deg, #ffeaa7, #fab1a0); display: none;">
     <div class="step-title">누구를 만나볼까?</div>
     <div class="btn-wrap">
@@ -161,7 +120,7 @@
     </div>
   </div>
 
-  <!-- 3단계: 도감 목록 -->
+  <!-- 3단계: 실사 사진 도감 목록 화면 -->
   <div id="listView">
     <header>
       <button class="home-btn" onclick="goToStart()">🏠 처음으로</button>
@@ -171,33 +130,7 @@
     <main class="grid-container" id="cardGrid"></main>
   </div>
 
-  <!-- 4단계: 3D 생생 관찰 모달 -->
-  <div id="actionOverlay">
-    <button id="closeOverlayBtn" onclick="closeOverlay()">✕ 닫기</button>
-    <div class="view-panel">
-      <h2 id="actionTitle">동물 이름</h2>
-      <p id="actionDesc"></p>
-
-      <!-- 부드럽게 걷는 고품질 3D 인터랙티브 뷰어 -->
-      <model-viewer id="viewer3D"
-                    camera-controls
-                    auto-rotate
-                    rotation-per-second="25deg"
-                    autoplay
-                    animation-name="*"
-                    shadow-intensity="1.5"
-                    shadow-softness="0.8"
-                    exposure="1.1"
-                    touch-action="pan-y"
-                    src="">
-      </model-viewer>
-      <div class="model-hint">👆 손가락으로 360도 돌려보며 구경해요!</div>
-
-      <button class="puzzle-btn" onclick="startPuzzleFromPanel()">🧩 3x3 퍼즐 맞추기</button>
-    </div>
-  </div>
-
-  <!-- 5단계: 3x3 퍼즐 모달 -->
+  <!-- 4단계: 3x3 터치 드래그 퍼즐 모달 -->
   <div id="puzzleOverlay">
     <button id="closePuzzleBtn" onclick="closePuzzle()">✕ 닫기</button>
     <div class="puzzle-header">
@@ -209,34 +142,38 @@
   </div>
 
   <script>
-    let selectedTerrain = '', selectedCategory = '', currentSelected = null;
+    let selectedTerrain = '';
+    let selectedCategory = '';
+    let currentSelected = null;
 
-    // 공룡/동물 정밀 3D GLB 에셋 + 실사 사진 데이터
+    // 실제 동물 및 공룡 사진 데이터
     const CREATURE_DATA = {
       'land-animal': [
-        { id: 'lion', name: '사자', file: 'lion.jpg', model: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/Fox/glTF-Binary/Fox.glb', fallback: 'https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=400&h=400&fit=crop&q=80', emoji: '🦁', desc: '용맹하게 달리는 백수의 왕 사자!' },
-        { id: 'tiger', name: '호랑이', file: 'tiger.jpg', model: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/Fox/glTF-Binary/Fox.glb', fallback: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&h=400&fit=crop&q=80', emoji: '🐯', desc: '줄무늬가 멋진 용감한 호랑이!' },
-        { id: 'giraffe', name: '기린', file: 'giraffe.jpg', model: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/Horse/glTF-Binary/Horse.glb', fallback: 'https://images.unsplash.com/photo-1538121669313-d150b4001ab9?w=400&h=400&fit=crop&q=80', emoji: '🦒', desc: '목이 아주 긴 기린 친구!' },
-        { id: 'elephant', name: '코끼리', file: 'elephant.jpg', model: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/Horse/glTF-Binary/Horse.glb', fallback: 'https://images.unsplash.com/photo-1557050543-4d5f4e07ef46?w=400&h=400&fit=crop&q=80', emoji: '🐘', desc: '코가 긴 듬직한 코끼리!' },
-        { id: 'zebra', name: '얼룩말', file: 'zebra.jpg', model: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/Horse/glTF-Binary/Horse.glb', fallback: 'https://images.unsplash.com/photo-1526095179574-86e545346ae6?w=400&h=400&fit=crop&q=80', emoji: '🦓', desc: '달리기를 잘하는 얼룩말!' },
-        { id: 'panda', name: '판다', file: 'panda.jpg', model: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/Fox/glTF-Binary/Fox.glb', fallback: 'https://images.unsplash.com/photo-1527118732049-c88155f2107c?w=400&h=400&fit=crop&q=80', emoji: '🐼', desc: '대나무를 좋아하는 귀여운 판다!' }
+        { id: 'lion', name: '사자', file: 'lion.jpg', fallback: 'https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=400&h=400&fit=crop&q=80', desc: '용맹한 백수의 왕 사자!' },
+        { id: 'tiger', name: '호랑이', file: 'tiger.jpg', fallback: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&h=400&fit=crop&q=80', desc: '줄무늬가 멋진 호랑이!' },
+        { id: 'giraffe', name: '기린', file: 'giraffe.jpg', fallback: 'https://images.unsplash.com/photo-1538121669313-d150b4001ab9?w=400&h=400&fit=crop&q=80', desc: '목이 아주 긴 기린!' },
+        { id: 'elephant', name: '코끼리', file: 'elephant.jpg', fallback: 'https://images.unsplash.com/photo-1557050543-4d5f4e07ef46?w=400&h=400&fit=crop&q=80', desc: '코가 긴 커다란 코끼리!' },
+        { id: 'zebra', name: '얼룩말', file: 'zebra.jpg', fallback: 'https://images.unsplash.com/photo-1526095179574-86e545346ae6?w=400&h=400&fit=crop&q=80', desc: '검은색 흰색 줄무늬 얼룩말!' },
+        { id: 'panda', name: '판다', file: 'panda.jpg', fallback: 'https://images.unsplash.com/photo-1527118732049-c88155f2107c?w=400&h=400&fit=crop&q=80', desc: '대나무를 좋아하는 귀여운 판다!' },
+        { id: 'monkey', name: '원숭이', file: 'monkey.jpg', fallback: 'https://images.unsplash.com/photo-1540573133985-87b6da6d54a9?w=400&h=400&fit=crop&q=80', desc: '나무를 잘 타는 장난꾸러기 원숭이!' },
+        { id: 'bear', name: '곰', file: 'bear.jpg', fallback: 'https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?w=400&h=400&fit=crop&q=80', desc: '듬직하고 힘센 곰!' }
       ],
       'land-dino': [
-        { id: 'trex', name: '티라노사우루스', file: 'trex.jpg', model: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/Monster/glTF-Binary/Monster.glb', fallback: 'https://images.unsplash.com/photo-1568832359672-e36cf5d74f54?w=400&h=400&fit=crop&q=80', emoji: '🦖', desc: '쿵쿵 걸어다니는 공룡의 제왕 티라노사우루스!' },
-        { id: 'trike', name: '트리케라톱스', file: 'trike.jpg', model: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/Monster/glTF-Binary/Monster.glb', fallback: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&h=400&fit=crop&q=80', emoji: '🦏', desc: '뿔이 세 개 달린 멋진 트리케라톱스!' },
-        { id: 'brachio', name: '브라키오사우루스', file: 'brachio.jpg', model: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/Horse/glTF-Binary/Horse.glb', fallback: 'https://images.unsplash.com/photo-1525869916826-972885c91c1e?w=400&h=400&fit=crop&q=80', emoji: '🦕', desc: '키가 아주 큰 브라키오사우루스!' },
-        { id: 'stego', name: '스테고사우루스', file: 'stego.jpg', model: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/Monster/glTF-Binary/Monster.glb', fallback: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=400&h=400&fit=crop&q=80', emoji: '🦎', desc: '등에 골판이 뾰족한 스테고사우루스!' },
-        { id: 'ptera', name: '프테라노돈', file: 'ptera.jpg', model: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/FlightHelmet/glTF-Binary/FlightHelmet.glb', fallback: 'https://images.unsplash.com/photo-1606857521015-7f9fcf423740?w=400&h=400&fit=crop&q=80', emoji: '🦅', desc: '하늘을 나는 멋진 프테라노돈!' }
+        { id: 'trex', name: '티라노사우루스', file: 'trex.jpg', fallback: 'https://images.unsplash.com/photo-1568832359672-e36cf5d74f54?w=400&h=400&fit=crop&q=80', desc: '가장 무시무시한 공룡의 제왕 티라노사우루스!' },
+        { id: 'trike', name: '트리케라톱스', file: 'trike.jpg', fallback: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&h=400&fit=crop&q=80', desc: '뿔이 세 개 달린 멋진 트리케라톱스!' },
+        { id: 'brachio', name: '브라키오사우루스', file: 'brachio.jpg', fallback: 'https://images.unsplash.com/photo-1525869916826-972885c91c1e?w=400&h=400&fit=crop&q=80', desc: '키가 아주아주 큰 거인 브라키오사우루스!' },
+        { id: 'stego', name: '스테고사우루스', file: 'stego.jpg', fallback: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=400&h=400&fit=crop&q=80', desc: '등에 골판이 뾰족뾰족 스테고사우루스!' },
+        { id: 'ptera', name: '프테라노돈', file: 'ptera.jpg', fallback: 'https://images.unsplash.com/photo-1606857521015-7f9fcf423740?w=400&h=400&fit=crop&q=80', desc: '하늘을 훨훨 나는 익룡 프테라노돈!' }
       ],
       'sea-animal': [
-        { id: 'dolphin', name: '돌고래', file: 'dolphin.jpg', model: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/BarramundiFish/glTF-Binary/BarramundiFish.glb', fallback: 'https://images.unsplash.com/photo-1607153333879-c174d265f1d2?w=400&h=400&fit=crop&q=80', emoji: '🐬', desc: '헤엄을 잘 치는 귀여운 돌고래!' },
-        { id: 'whale', name: '고래', file: 'whale.jpg', model: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/BarramundiFish/glTF-Binary/BarramundiFish.glb', fallback: 'https://images.unsplash.com/photo-1568430467505-5925a74e5028?w=400&h=400&fit=crop&q=80', emoji: '🐳', desc: '바다에서 가장 큰 대왕고래!' },
-        { id: 'shark', name: '상어', file: 'shark.jpg', model: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/BarramundiFish/glTF-Binary/BarramundiFish.glb', fallback: 'https://images.unsplash.com/photo-1560275619-4662e36fa65c?w=400&h=400&fit=crop&q=80', emoji: '🦈', desc: '바다의 사냥꾼 백상아리!' },
-        { id: 'turtle', name: '바다거북', file: 'turtle.jpg', model: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/BarramundiFish/glTF-Binary/BarramundiFish.glb', fallback: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&h=400&fit=crop&q=80', emoji: '🐢', desc: '느릿느릿 귀여운 바다거북!' }
+        { id: 'dolphin', name: '돌고래', file: 'dolphin.jpg', fallback: 'https://images.unsplash.com/photo-1607153333879-c174d265f1d2?w=400&h=400&fit=crop&q=80', desc: '점프를 잘하는 똑똑한 돌고래!' },
+        { id: 'whale', name: '고래', file: 'whale.jpg', fallback: 'https://images.unsplash.com/photo-1568430467505-5925a74e5028?w=400&h=400&fit=crop&q=80', desc: '바다에서 가장 큰 대왕고래!' },
+        { id: 'shark', name: '상어', file: 'shark.jpg', fallback: 'https://images.unsplash.com/photo-1560275619-4662e36fa65c?w=400&h=400&fit=crop&q=80', desc: '날카로운 이빨을 가진 바다의 사냥꾼 상어!' },
+        { id: 'turtle', name: '바다거북', file: 'turtle.jpg', fallback: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&h=400&fit=crop&q=80', desc: '바닷속을 헤엄치는 바다거북!' }
       ],
       'sea-dino': [
-        { id: 'mosa', name: '모사사우루스', file: 'mosa.jpg', model: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/BarramundiFish/glTF-Binary/BarramundiFish.glb', fallback: 'https://images.unsplash.com/photo-1570481662006-a3a1374699e8?w=400&h=400&fit=crop&q=80', emoji: '🐊', desc: '고대 바다의 최강자 모사사우루스!' },
-        { id: 'plesio', name: '플레시오사우루스', file: 'plesio.jpg', model: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/BarramundiFish/glTF-Binary/BarramundiFish.glb', fallback: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&h=400&fit=crop&q=80', emoji: '🦕', desc: '목이 긴 신비로운 플레시오사우루스!' }
+        { id: 'mosa', name: '모사사우루스', file: 'mosa.jpg', fallback: 'https://images.unsplash.com/photo-1570481662006-a3a1374699e8?w=400&h=400&fit=crop&q=80', desc: '고대 바다의 최강자 모사사우루스!' },
+        { id: 'plesio', name: '플레시오사우루스', file: 'plesio.jpg', fallback: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&h=400&fit=crop&q=80', desc: '목이 긴 신비로운 플레시오사우루스!' }
       ]
     };
 
@@ -285,13 +222,8 @@
         activePhotoUrls[item.id] = item.file;
 
         img.onerror = () => {
-          if (img.src.indexOf(item.fallback) === -1) {
-            img.src = item.fallback;
-            activePhotoUrls[item.id] = item.fallback;
-          } else {
-            img.style.display = 'none';
-            wrap.innerText = item.emoji;
-          }
+          img.src = item.fallback;
+          activePhotoUrls[item.id] = item.fallback;
         };
 
         wrap.appendChild(img);
@@ -302,33 +234,13 @@
 
         card.appendChild(wrap);
         card.appendChild(nameLabel);
-        card.onclick = () => openActionPanel(item);
+        card.onclick = () => openPuzzle(item);
         grid.appendChild(card);
       });
     }
 
-    function openActionPanel(item) {
-      currentSelected = item;
-      document.getElementById('actionTitle').innerText = item.name;
-      document.getElementById('actionDesc').innerText = item.desc;
-      speak(`${item.name}! ${item.desc}`);
-
-      // 3D 뷰어 소스 연결 (자동 회전 + 자동 애니메이션)
-      const viewer = document.getElementById('viewer3D');
-      viewer.src = item.model;
-
-      document.getElementById('actionOverlay').style.display = 'flex';
-    }
-
-    function closeOverlay() {
-      document.getElementById('actionOverlay').style.display = 'none';
-      const viewer = document.getElementById('viewer3D');
-      viewer.src = ''; // 리소스 정리
-    }
-
     function goToStart() {
       document.getElementById('listView').style.display = 'none';
-      document.getElementById('actionOverlay').style.display = 'none';
       document.getElementById('puzzleOverlay').style.display = 'none';
       document.getElementById('screenCategory').style.display = 'none';
       document.getElementById('screenTerrain').style.display = 'flex';
@@ -353,9 +265,10 @@
     let dragSlotIdx = -1;
     let startX = 0, startY = 0, origLeft = 0, origTop = 0;
 
-    function startPuzzleFromPanel() {
-      document.getElementById('actionOverlay').style.display = 'none';
-      document.getElementById('puzzleTitle').innerText = `${currentSelected.name} 퍼즐`;
+    function openPuzzle(item) {
+      currentSelected = item;
+      speak(`${item.name}! ${item.desc}`);
+      document.getElementById('puzzleTitle').innerText = `${item.name} 퍼즐`;
       document.getElementById('puzzleCompleteMsg').style.display = 'none';
       document.getElementById('puzzleOverlay').style.display = 'flex';
 
@@ -366,6 +279,7 @@
 
     function closePuzzle() {
       document.getElementById('puzzleOverlay').style.display = 'none';
+      currentSelected = null;
     }
 
     function shuffle(arr) {
