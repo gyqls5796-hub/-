@@ -13,7 +13,7 @@
       color: #2f3542; overflow-x: hidden;
     }
 
-    /* 1단계 & 2단계 풀스크린 선택 화면 */
+    /* 1단계 & 2단계 풀스크린 선택 */
     .step-screen {
       position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
       display: flex; flex-direction: column; justify-content: center; align-items: center;
@@ -32,7 +32,7 @@
     }
     .big-choice-btn:active { transform: scale(0.95); }
 
-    /* 3단계: 도감 목록 화면 */
+    /* 3단계: 도감 목록 */
     #listView { display: none; min-height: 100vh; }
     header {
       position: sticky; top: 0; background: #ffffff; padding: 10px 14px;
@@ -45,7 +45,6 @@
       font-weight: bold; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
     .home-btn:active { transform: scale(0.95); background: #f1f2f6; }
-    
     #categoryHeaderTitle { font-size: 1.25rem; margin: 0; font-weight: 800; color: #2f3542; text-align: center; }
     .header-dummy { width: 70px; }
 
@@ -80,7 +79,6 @@
       background: #ff4757; color: white; font-weight: bold; cursor: pointer;
       box-shadow: 0 4px 10px rgba(0,0,0,0.5);
     }
-
     .view-panel {
       width: 100%; max-width: 350px; background: #ffffff; border-radius: 25px;
       padding: 20px; display: flex; flex-direction: column; align-items: center;
@@ -97,8 +95,8 @@
     .preview-box img { width: 100%; height: 100%; object-fit: cover; }
 
     .ar-custom-btn {
-      margin-top: 18px; font-size: 1.25rem; font-weight: bold;
-      padding: 16px 20px; border-radius: 25px; border: none;
+      margin-top: 16px; font-size: 1.2rem; font-weight: bold;
+      padding: 15px 20px; border-radius: 25px; border: none;
       background: linear-gradient(135deg, #00cec9, #0984e3);
       color: #ffffff; cursor: pointer; width: 100%; max-width: 280px;
       box-shadow: 0 4px 12px rgba(9, 132, 227, 0.35); text-decoration: none;
@@ -113,29 +111,47 @@
     }
     .puzzle-btn:active { transform: scale(0.96); }
 
-    /* 실시간 카메라 AR 화면 (포켓몬 GO 모드) */
+    /* 실시간 카메라 AR 화면 (포켓몬 GO 스타일) */
     #cameraARView {
       display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-      background: #000; z-index: 200; touch-action: none;
+      background: #000; z-index: 200; touch-action: none; overflow: hidden;
     }
-    #cameraVideo {
-      width: 100vw; height: 100vh; object-fit: cover;
-    }
-    #arCreature {
-      position: absolute; top: 50%; left: 50%;
+    #cameraVideo { width: 100vw; height: 100vh; object-fit: cover; }
+
+    /* 소환된 생명체 및 바닥 그림자 */
+    #arCreatureWrapper {
+      position: absolute; top: 60%; left: 50%;
       transform: translate(-50%, -50%);
-      width: 180px; height: 180px;
-      cursor: grab;
-      filter: drop-shadow(0 15px 15px rgba(0,0,0,0.6));
-      animation: bobbing 2s infinite ease-in-out;
+      display: flex; flex-direction: column; align-items: center;
+      cursor: grab; touch-action: none;
     }
-    @keyframes bobbing {
-      0%, 100% { transform: translate(-50%, -50%) translateY(0px) scale(1); }
-      50% { transform: translate(-50%, -50%) translateY(-15px) scale(1.03); }
+    #arCreatureCanvas {
+      width: 200px; height: 200px;
+      filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));
+      animation: creatureHover 2.2s infinite ease-in-out;
     }
-    #arCreature img {
-      width: 100%; height: 100%; object-fit: contain; border-radius: 20px;
+    @keyframes creatureHover {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-12px); }
     }
+    .shadow-ground {
+      width: 140px; height: 25px;
+      background: radial-gradient(ellipse at center, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 70%);
+      margin-top: -10px; border-radius: 50%;
+    }
+
+    /* 크기 조절 컨트롤러 */
+    .size-ctrl-box {
+      position: absolute; bottom: 85px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 12px; z-index: 210;
+    }
+    .size-btn {
+      font-size: 1.2rem; font-weight: bold; padding: 10px 18px; border-radius: 20px;
+      border: none; background: rgba(255,255,255,0.9); color: #2f3542; cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+    .size-btn:active { transform: scale(0.95); }
+
     #closeCameraBtn {
       position: absolute; top: 20px; right: 20px; z-index: 210;
       font-size: 1.1rem; padding: 8px 18px; border-radius: 20px; border: none;
@@ -143,11 +159,11 @@
     }
     .ar-guide-text {
       position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
-      background: rgba(0,0,0,0.7); color: #fff; padding: 10px 20px; border-radius: 20px;
+      background: rgba(0,0,0,0.75); color: #fff; padding: 10px 20px; border-radius: 20px;
       font-size: 0.95rem; z-index: 210; pointer-events: none; width: max-content;
     }
 
-    /* 3x3 터치 드래그 퍼즐 모달 */
+    /* 3x3 퍼즐 모달 */
     #puzzleOverlay {
       display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
       background: rgba(0, 0, 0, 0.92); z-index: 150; flex-direction: column;
@@ -181,7 +197,7 @@
 </head>
 <body>
 
-  <!-- 1단계: 육지 / 바다 선택 -->
+  <!-- 1단계: 육지 / 바다 -->
   <div id="screenTerrain" class="step-screen" style="background: linear-gradient(135deg, #74b9ff, #55efc4);">
     <div class="step-title">어디로 떠나볼까?</div>
     <div class="btn-wrap">
@@ -190,7 +206,7 @@
     </div>
   </div>
 
-  <!-- 2단계: 동물 / 공룡 선택 -->
+  <!-- 2단계: 동물 / 공룡 -->
   <div id="screenCategory" class="step-screen" style="background: linear-gradient(135deg, #ffeaa7, #fab1a0); display: none;">
     <div class="step-title">누구를 만나볼까?</div>
     <div class="btn-wrap">
@@ -199,7 +215,7 @@
     </div>
   </div>
 
-  <!-- 3단계: 도감 목록 화면 -->
+  <!-- 3단계: 도감 목록 -->
   <div id="listView">
     <header>
       <button class="home-btn" onclick="goToStart()">🏠 처음으로</button>
@@ -212,31 +228,38 @@
   <!-- 4단계: 선택 패널 모달 -->
   <div id="actionOverlay">
     <button id="closeOverlayBtn" onclick="closeOverlay()">✕ 닫기</button>
-    
     <div class="view-panel">
       <h2 id="actionTitle">동물 이름</h2>
       <p id="actionDesc"></p>
-
       <div class="preview-box">
         <img id="panelPreviewImg" src="" alt="">
       </div>
 
-      <button class="ar-custom-btn" onclick="openCameraAR()">📱 포켓몬GO처럼 방에 소환!</button>
+      <button class="ar-custom-btn" onclick="openCameraAR()">📱 방바닥에 소환하기 (포켓몬 GO)</button>
       <button class="puzzle-btn" onclick="startPuzzleFromPanel()">🧩 3x3 퍼즐 맞추기</button>
     </div>
   </div>
 
-  <!-- 5단계: 실시간 카메라 AR 화면 (방바닥 소환) -->
+  <!-- 5단계: 실시간 카메라 AR 방바닥 소환 화면 -->
   <div id="cameraARView">
     <button id="closeCameraBtn" onclick="closeCameraAR()">✕ 닫기</button>
     <video id="cameraVideo" autoplay playsinline muted></video>
-    <div id="arCreature">
-      <img id="arCreatureImg" src="" alt="">
+
+    <!-- 바닥에 소환되는 생명체 -->
+    <div id="arCreatureWrapper">
+      <canvas id="arCreatureCanvas" width="300" height="300"></canvas>
+      <div class="shadow-ground"></div>
     </div>
-    <div class="ar-guide-text">손가락으로 드래그해서 위치를 옮겨보세요!</div>
+
+    <div class="size-ctrl-box">
+      <button class="size-btn" onclick="changeSize(0.8)">작게 ➖</button>
+      <button class="size-btn" onclick="changeSize(1.25)">크게 ➕</button>
+    </div>
+
+    <div class="ar-guide-text">손가락으로 드래그해서 방바닥에 배치해 보세요!</div>
   </div>
 
-  <!-- 6단계: 3x3 터치 드래그 퍼즐 모달 -->
+  <!-- 6단계: 3x3 퍼즐 모달 -->
   <div id="puzzleOverlay">
     <button id="closePuzzleBtn" onclick="closePuzzle()">✕ 닫기</button>
     <div class="puzzle-header">
@@ -248,10 +271,9 @@
   </div>
 
   <script>
-    let selectedTerrain = '';
-    let selectedCategory = '';
-    let currentSelected = null;
+    let selectedTerrain = '', selectedCategory = '', currentSelected = null;
     let cameraStream = null;
+    let currentScale = 1.0;
 
     const CREATURE_DATA = {
       'land-animal': [
@@ -356,7 +378,6 @@
 
       const photoUrl = activePhotoUrls[item.id] || item.fallback;
       document.getElementById('panelPreviewImg').src = photoUrl;
-
       document.getElementById('actionOverlay').style.display = 'flex';
     }
 
@@ -364,14 +385,37 @@
       document.getElementById('actionOverlay').style.display = 'none';
     }
 
-    /* --- 실시간 카메라 AR 방바닥 소환 엔진 (포켓몬 GO 스타일) --- */
+    /* --- 포켓몬 GO 실사 누끼 방바닥 소환 렌더러 --- */
     async function openCameraAR() {
       document.getElementById('actionOverlay').style.display = 'none';
       const arView = document.getElementById('cameraARView');
       const video = document.getElementById('cameraVideo');
-      const creatureImg = document.getElementById('arCreatureImg');
+      const canvas = document.getElementById('arCreatureCanvas');
+      const ctx = canvas.getContext('2d');
 
-      creatureImg.src = activePhotoUrls[currentSelected.id] || currentSelected.fallback;
+      // 네모난 배경을 원형/투명 누끼 형태로 부드럽게 렌더링
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.src = activePhotoUrls[currentSelected.id] || currentSelected.fallback;
+      img.onload = () => {
+        ctx.clearRect(0, 0, 300, 300);
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(150, 150, 130, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+        ctx.drawImage(img, 0, 0, 300, 300);
+        ctx.restore();
+
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.arc(150, 150, 130, 0, Math.PI * 2);
+        ctx.stroke();
+      };
+
+      currentScale = 1.0;
+      updateScale();
       arView.style.display = 'block';
 
       speak(`방바닥에 ${currentSelected.name} 소환 완료!`);
@@ -383,8 +427,18 @@
         });
         video.srcObject = cameraStream;
       } catch (err) {
-        alert('카메라 권한을 허용해주시면 방바닥 위에 소환됩니다!');
+        alert('카메라 권한을 허용해 주시면 방바닥 위에 소환됩니다!');
       }
+    }
+
+    function changeSize(delta) {
+      currentScale = Math.min(2.0, Math.max(0.4, currentScale * delta));
+      updateScale();
+    }
+
+    function updateScale() {
+      const wrapper = document.getElementById('arCreatureWrapper');
+      wrapper.style.transform = `translate(-50%, -50%) scale(${currentScale})`;
     }
 
     function closeCameraAR() {
@@ -397,23 +451,23 @@
     }
 
     // AR 동물 손가락 드래그 이동
-    const creatureEl = document.getElementById('arCreature');
-    let isArDragging = false;
-    let arStartX = 0, arStartY = 0;
+    const wrapperEl = document.getElementById('arCreatureWrapper');
+    let isDraggingAr = false;
+    let startTouchX = 0, startTouchY = 0;
 
-    creatureEl.addEventListener('touchstart', (e) => {
-      isArDragging = true;
-      arStartX = e.touches[0].clientX - creatureEl.offsetLeft;
-      arStartY = e.touches[0].clientY - creatureEl.offsetTop;
+    wrapperEl.addEventListener('touchstart', (e) => {
+      isDraggingAr = true;
+      startTouchX = e.touches[0].clientX - wrapperEl.offsetLeft;
+      startTouchY = e.touches[0].clientY - wrapperEl.offsetTop;
     });
 
     window.addEventListener('touchmove', (e) => {
-      if (!isArDragging) return;
-      creatureEl.style.left = `${e.touches[0].clientX - arStartX + creatureEl.offsetWidth/2}px`;
-      creatureEl.style.top = `${e.touches[0].clientY - arStartY + creatureEl.offsetHeight/2}px`;
+      if (!isDraggingAr) return;
+      wrapperEl.style.left = `${e.touches[0].clientX - startTouchX + wrapperEl.offsetWidth/2}px`;
+      wrapperEl.style.top = `${e.touches[0].clientY - startTouchY + wrapperEl.offsetHeight/2}px`;
     });
 
-    window.addEventListener('touchend', () => { isArDragging = false; });
+    window.addEventListener('touchend', () => { isDraggingAr = false; });
 
     function goToStart() {
       document.getElementById('listView').style.display = 'none';
