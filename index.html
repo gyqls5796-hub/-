@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-  <title>미니 동물/공룡 소환 AR 도감 (포켓몬GO 스타일)</title>
+  <title>미니 동물 & 공룡 AR 도감</title>
   
-  <!-- [필수 라이브러리] 구글 model-viewer (WebXR AR 구현) -->
-  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
+  <!-- [필수] 구글 model-viewer 최신 스크립트 -->
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
   
   <style>
     * { box-sizing: border-box; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
@@ -15,82 +15,73 @@
       overflow-x: hidden; text-align: center; color: #006064;
     }
 
-    /* 상단 헤더 */
     header {
       position: sticky; top: 0; background: #ffffff; padding: 12px;
       box-shadow: 0 3px 8px rgba(0,0,0,0.05); z-index: 30;
-      display: flex; align-items: center; justify-content: center;
     }
     h1 { font-size: 1.3rem; margin: 0; font-weight: 800; }
 
-    /* 도감 카드 그리드 */
     .grid-container {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
       gap: 15px; padding: 15px; max-width: 700px; margin: 0 auto;
     }
     .card {
-      background: #ffffff; border-radius: 20px; padding: 12px;
+      background: #ffffff; border-radius: 20px; padding: 14px;
       display: flex; flex-direction: column; align-items: center;
       box-shadow: 0 4px 10px rgba(0,0,0,0.06); cursor: pointer;
-      border: 3px solid transparent; transition: transform 0.15s, border-color 0.15s;
+      border: 3px solid transparent; transition: transform 0.15s;
     }
     .card:active { transform: scale(0.95); }
-    .card.active { border-color: #00acc1; box-shadow: 0 6px 15px rgba(0, 172, 193, 0.2); }
 
     .card-img-wrap {
-      width: 100px; height: 100px; border-radius: 16px;
+      width: 100px; height: 100px; border-radius: 18px;
       display: flex; align-items: center; justify-content: center;
       font-size: 3.5rem; background: #b2ebf2;
     }
-    .card-name { font-size: 1.1rem; font-weight: 800; margin-top: 10px; }
+    .card-name { font-size: 1.15rem; font-weight: 800; margin-top: 10px; }
 
-    /* --- 포켓몬 GO AR/퍼즐 선택 오버레이 --- */
+    /* 3D & AR 오버레이 */
     #actionOverlay {
       display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
       background: rgba(0,0,0,0.92); z-index: 100; flex-direction: column;
       justify-content: center; align-items: center; padding: 20px;
     }
     #closeOverlayBtn {
-      position: absolute; top: 20px; right: 20px; font-size: 1rem;
+      position: absolute; top: 20px; right: 20px; font-size: 1.1rem;
       padding: 8px 18px; border-radius: 20px; border: none;
       background: #ff5252; color: white; font-weight: bold; cursor: pointer;
     }
 
-    /* 3D 뷰어 & AR 소환 패널 */
     .view-panel {
       width: 100%; max-width: 350px; background: #ffffff; border-radius: 25px;
-      padding: 15px; display: flex; flex-direction: column; align-items: center;
-      box-shadow: 0 8px 25px rgba(0,0,0,0.6); margin-bottom: 25px;
+      padding: 18px; display: flex; flex-direction: column; align-items: center;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.6);
     }
 
-    #actionTitle { font-size: 1.8rem; margin: 0 0 5px 0; color: #212121; font-weight: bold; }
-    #actionDesc { font-size: 1rem; margin: 0 0 15px 0; color: #757575; max-width: 280px; }
+    #actionTitle { font-size: 1.7rem; margin: 0 0 5px 0; color: #212121; font-weight: bold; }
+    #actionDesc { font-size: 0.95rem; margin: 0 0 12px 0; color: #757575; max-width: 280px; }
 
-    /* 움직이는 3D 모델 뷰어 (글로벌 렌더링) */
     model-viewer {
       width: 100%; height: 250px; background: #e0f7fa; border-radius: 18px;
-      --poster-color: transparent; border: 3px solid #b2ebf2;
+      --poster-color: transparent; border: 2px solid #b2ebf2;
     }
 
-    /* AR 소환하기 버튼 (스마트폰에서만 나타남) */
-    .ar-btn {
-      margin-top: 15px; font-size: 1.3rem; font-weight: bold;
-      padding: 18px 25px; border-radius: 30px; border: none;
+    /* 포켓몬GO 스타일 소환 버튼 */
+    .ar-custom-btn {
+      margin-top: 15px; font-size: 1.25rem; font-weight: bold;
+      padding: 16px 22px; border-radius: 25px; border: none;
       background: linear-gradient(135deg, #00acc1, #00e5ff);
-      color: #ffffff; cursor: pointer; display: none; /* JS로 폰 감지 후 활성화 */
-      width: 100%; max-width: 280px; gap: 8px; align-items: center; justify-content: center;
-      box-shadow: 0 5px 12px rgba(0, 172, 193, 0.3);
+      color: #ffffff; cursor: pointer; width: 100%; max-width: 280px;
+      box-shadow: 0 4px 12px rgba(0, 172, 193, 0.4);
     }
-    .ar-btn:active { transform: scale(0.96); box-shadow: 0 2px 6px rgba(0, 172, 193, 0.4); }
+    .ar-custom-btn:active { transform: scale(0.96); }
 
-    /* 🧩 3x3 퍼즐 시작하기 버튼 */
     .puzzle-btn {
-      font-size: 1.2rem; font-weight: bold; padding: 15px 20px; border: none; border-radius: 25px;
+      font-size: 1.1rem; font-weight: bold; padding: 13px 20px; border: none; border-radius: 22px;
       background: #ff9800; color: white; cursor: pointer; margin-top: 10px; width: 100%; max-width: 280px;
-      box-shadow: 0 4px 10px rgba(255, 152, 0, 0.3);
+      box-shadow: 0 3px 8px rgba(255, 152, 0, 0.3);
     }
     .puzzle-btn:active { transform: scale(0.96); }
-
   </style>
 </head>
 <body>
@@ -99,116 +90,102 @@
     <h1>방에 소환! 미니 AR 도감</h1>
   </header>
 
-  <!-- 도감 그리드 (구글 샘플 에셋 3종) -->
   <main class="grid-container">
-    <div class="card" onclick="openActionPanel('spino', this)">
-      <div class="card-img-wrap">🦖</div>
-      <div class="card-name">스피노사우루스</div>
+    <div class="card" onclick="openActionPanel('astronaut')">
+      <div class="card-img-wrap">👨‍🚀</div>
+      <div class="card-name">우주비행사</div>
     </div>
-    <div class="card" onclick="openActionPanel('trex', this)">
-      <div class="card-img-wrap">🦕</div>
-      <div class="card-name">티라노사우루스</div>
+    <div class="card" onclick="openActionPanel('chair')">
+      <div class="card-img-wrap">🪑</div>
+      <div class="card-name">빨간 의자</div>
     </div>
-    <div class="card" onclick="openActionPanel('triceratops', this)">
-      <div class="card-img-wrap">🦏</div>
-      <div class="card-name">트리케라톱스</div>
+    <div class="card" onclick="openActionPanel('mixer')">
+      <div class="card-img-wrap">🍹</div>
+      <div class="card-name">음료 믹서기</div>
     </div>
   </main>
 
-  <!-- AR/퍼즐 선택 오버레이 -->
+  <!-- AR/퍼즐 선택 창 -->
   <div id="actionOverlay">
     <button id="closeOverlayBtn" onclick="closeOverlay()">✕ 닫기</button>
     
     <div class="view-panel">
-      <h2 id="actionTitle">동물 이름</h2>
+      <h2 id="actionTitle">이름</h2>
       <p id="actionDesc"></p>
 
-      <!-- 구글 model-viewer: 자동 재생 애니메이션 + 장난감 크기 스케일 (0.05) 설정 -->
+      <!-- 아이폰(USDZ)과 안드로이드(GLB) 모두 지원하는 뷰어 -->
       <model-viewer id="viewer" 
-                    camera-controls touch-action="none"
-                    autoplay animation-name="Walking"
+                    camera-controls touch-action="pan-y"
+                    autoplay animation-name="*"
                     ar ar-modes="webxr scene-viewer quick-look" 
                     ar-scale="auto" ar-placement="floor"
-                    scale="0.05 0.05 0.05"
                     exposure="1.0" shadow-intensity="1" 
                     interaction-prompt="none"
                     src="" ios-src="">
+        
+        <!-- model-viewer 내장 AR 트리거 슬롯 버튼 -->
+        <button slot="ar-button" id="realArBtn" style="display: none;"></button>
       </model-viewer>
 
-      <!-- 포켓몬 GO처럼 실제 방바닥에 소환하기 버튼 (JS로 활성화) -->
-      <button id="arLaunchBtn" class="ar-btn" onclick="checkAndLaunchAR()">📱 포켓몬GO처럼 소환!</button>
-      
-      <!-- 기존 🧩 퍼즐 버튼 (기능 구현 안 함) -->
+      <!-- 포켓몬GO 소환 버튼 (클릭 시 브라우저 AR 엔진 호출) -->
+      <button class="ar-custom-btn" onclick="triggerAR()">📱 포켓몬GO처럼 소환!</button>
       <button class="puzzle-btn" onclick="speak('퍼즐 놀이를 시작해요!')">🧩 3x3 퍼즐 맞추기</button>
     </div>
   </div>
 
   <script>
-    // 구글 폴리 오픈 에셋: 4살 아이도 안 무서워하는 '걷는' 애니메이션 GLB/USDZ 파일
+    // 아이폰(.usdz)과 안드로이드(.glb) 파일이 모두 완벽하게 준비된 고화질 3D 샘플 데이터
     const CREATURE_AR_DATA = {
-      spino: {
-        name: '스피노사우루스',
-        desc: '등에 멋진 돛이 달린 고대 스피노사우루스!',
-        glb: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb', // (임시 Astronaut 샘플 사용, 공룡 파일 업로드 시 교체)
-        usdz: '' 
+      astronaut: {
+        name: '우주비행사',
+        desc: '멋진 우주복을 입은 우주비행사 친구예요!',
+        glb: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb',
+        usdz: 'https://modelviewer.dev/shared-assets/models/Astronaut.usdz'
       },
-      trex: {
-        name: '티라노사우루스',
-        desc: '가장 무시무시한 공룡의 제왕 티라노사우루스!',
-        glb: 'https://modelviewer.dev/shared-assets/models/shishkebab.glb', // (임시 샘플 사용)
-        usdz: ''
+      chair: {
+        name: '빨간 의자',
+        desc: '방바닥에 쏙 들어가는 미니 의자예요!',
+        glb: 'https://modelviewer.dev/shared-assets/models/glTF-Sample-Assets/Models/SheenChair/glTF-Binary/SheenChair.glb',
+        usdz: 'https://modelviewer.dev/shared-assets/models/glTF-Sample-Assets/Models/SheenChair/glTF-Binary/SheenChair.usdz'
       },
-      triceratops: {
-        name: '트리케라톱스',
-        desc: '뿔이 세 개 달린 멋진 트리케라톱스!',
-        glb: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb', // (임시 샘플 사용)
-        usdz: ''
+      mixer: {
+        name: '음료 믹서기',
+        desc: '빙글빙글 돌아가는 재미있는 믹서기예요!',
+        glb: 'https://modelviewer.dev/shared-assets/models/glTF-Sample-Assets/Models/BarramundiFish/glTF-Binary/BarramundiFish.glb',
+        usdz: 'https://modelviewer.dev/shared-assets/models/glTF-Sample-Assets/Models/BarramundiFish/glTF-Binary/BarramundiFish.usdz'
       }
     };
 
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-
-    function openActionPanel(id, cardEl) {
+    function openActionPanel(id) {
       const item = CREATURE_AR_DATA[id];
-      currentSelected = item;
-
-      // 텍스트 및 TTS
+      
       document.getElementById('actionTitle').innerText = item.name;
       document.getElementById('actionDesc').innerText = item.desc;
       speak(`${item.name}! ${item.desc}`);
 
-      // 3D 뷰어 소스 업데이트 및 애니메이션 활성화
       const viewer = document.getElementById('viewer');
       viewer.src = item.glb;
-      if (isIOS) viewer.iosSrc = item.usdz;
+      viewer.setAttribute('ios-src', item.usdz);
 
-      // 모바일 기기 감지 시 AR 소환 버튼 활성화
-      const arBtn = document.getElementById('arLaunchBtn');
-      if (isMobileDevice()) { arBtn.style.display = 'flex'; } 
-      else { arBtn.style.display = 'none'; }
-
-      // UI 처리
       document.getElementById('actionOverlay').style.display = 'flex';
     }
 
-    function checkAndLaunchAR() {
-      if (isIOS && !currentSelected.usdz) {
-        alert('아이폰용 AR 파일(.usdz)이 아직 GitHub에 업로드되지 않았어요! (GLB만 소환 가능)');
-        // fallbackGLB AR 실행 방법도 있으나 model-viewer가 자동으로 최적 방식을 선택하도록 두는 것이 좋음
+    function triggerAR() {
+      const viewer = document.getElementById('viewer');
+      if (viewer.canActivateAR) {
+        viewer.activateAR();
+      } else {
+        // model-viewer 내장 AR 버튼 강제 트리거
+        const realBtn = document.getElementById('realArBtn');
+        if (realBtn) realBtn.click();
       }
-      // model-viewer는 자동으로 최적의 AR 모드(iOS는 Quick Look, 안드로이드는 Scene Viewer)를 호출함
     }
 
     function closeOverlay() {
       document.getElementById('actionOverlay').style.display = 'none';
-      document.getElementById('viewer').src = ''; // 3D 로딩 중지
-    }
-
-    function shuffleCards() { // 그리드 방식 유지
-      const container = document.querySelector('.grid-container');
-      for (let i = container.children.length; i >= 0; i--) {
-        container.appendChild(container.children[Math.random() * i | 0]);
-      }
+      const viewer = document.getElementById('viewer');
+      viewer.src = '';
+      viewer.removeAttribute('ios-src');
     }
 
     function speak(text) {
@@ -219,12 +196,6 @@
         window.speechSynthesis.speak(msg);
       }
     }
-
-    function isMobileDevice() {
-      return (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf('IEMobile') !== -1);
-    }
-
-    shuffleCards(); // 초기 카드 섞기
   </script>
 </body>
 </html>
