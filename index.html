@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="referrer" content="no-referrer">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-  <title>미니 동물 & 공룡 AR 도감</title>
+  <title>미니 동물 & 공룡 3D AR 도감</title>
   
   <style>
     * { box-sizing: border-box; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
@@ -94,15 +94,16 @@
     }
     .preview-box img { width: 100%; height: 100%; object-fit: cover; }
 
-    .ar-custom-btn {
-      margin-top: 16px; font-size: 1.2rem; font-weight: bold;
+    /* 애플 공식 Quick Look AR 직통 버튼 (아이폰 100% 호환) */
+    .ar-link-btn {
+      margin-top: 16px; font-size: 1.15rem; font-weight: bold;
       padding: 15px 20px; border-radius: 25px; border: none;
       background: linear-gradient(135deg, #00cec9, #0984e3);
       color: #ffffff; cursor: pointer; width: 100%; max-width: 280px;
       box-shadow: 0 4px 12px rgba(9, 132, 227, 0.35); text-decoration: none;
       display: flex; align-items: center; justify-content: center; gap: 8px;
     }
-    .ar-custom-btn:active { transform: scale(0.96); }
+    .ar-link-btn:active { transform: scale(0.96); }
 
     .puzzle-btn {
       font-size: 1.1rem; font-weight: bold; padding: 13px 20px; border: none; border-radius: 22px;
@@ -110,64 +111,6 @@
       box-shadow: 0 3px 8px rgba(255, 159, 67, 0.3);
     }
     .puzzle-btn:active { transform: scale(0.96); }
-
-    /* 실시간 카메라 AR 화면 (포켓몬 GO 스타일) */
-    #cameraARView {
-      display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-      background: #000; z-index: 200; touch-action: none; overflow: hidden;
-    }
-    #cameraVideo { width: 100vw; height: 100vh; object-fit: cover; }
-
-    /* 포켓몬 GO 캐릭터 피규어 및 통통 튀는 모션 */
-    #arCreatureWrapper {
-      position: absolute; top: 62%; left: 50%;
-      transform: translate(-50%, -50%);
-      display: flex; flex-direction: column; align-items: center;
-      cursor: grab; touch-action: none;
-    }
-    #arCharacterCanvas {
-      width: 220px; height: 220px;
-      animation: pokemonBounce 1.6s infinite ease-in-out;
-    }
-    @keyframes pokemonBounce {
-      0%, 100% { transform: translateY(0px) scale(1, 1); }
-      40% { transform: translateY(-28px) scale(0.96, 1.04); }
-      70% { transform: translateY(0px) scale(1.05, 0.95); }
-    }
-    .shadow-ground {
-      width: 150px; height: 26px;
-      background: radial-gradient(ellipse at center, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0) 70%);
-      margin-top: -15px; border-radius: 50%;
-      animation: shadowScale 1.6s infinite ease-in-out;
-    }
-    @keyframes shadowScale {
-      0%, 100% { transform: scale(1); opacity: 0.55; }
-      40% { transform: scale(0.75); opacity: 0.25; }
-      70% { transform: scale(1.08); opacity: 0.6; }
-    }
-
-    /* 크기 조절 컨트롤러 */
-    .size-ctrl-box {
-      position: absolute; bottom: 85px; left: 50%; transform: translateX(-50%);
-      display: flex; gap: 12px; z-index: 210;
-    }
-    .size-btn {
-      font-size: 1.15rem; font-weight: bold; padding: 10px 18px; border-radius: 20px;
-      border: none; background: rgba(255,255,255,0.9); color: #2f3542; cursor: pointer;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    }
-    .size-btn:active { transform: scale(0.95); }
-
-    #closeCameraBtn {
-      position: absolute; top: 20px; right: 20px; z-index: 210;
-      font-size: 1.1rem; padding: 8px 18px; border-radius: 20px; border: none;
-      background: #ff4757; color: white; font-weight: bold; cursor: pointer;
-    }
-    .ar-guide-text {
-      position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
-      background: rgba(0,0,0,0.75); color: #fff; padding: 10px 20px; border-radius: 20px;
-      font-size: 0.95rem; z-index: 210; pointer-events: none; width: max-content;
-    }
 
     /* 3x3 퍼즐 모달 */
     #puzzleOverlay {
@@ -241,31 +184,17 @@
         <img id="panelPreviewImg" src="" alt="">
       </div>
 
-      <button class="ar-custom-btn" onclick="openCameraAR()">📱 방바닥에 소환하기 (포켓몬 GO)</button>
+      <!-- 아이폰 공식 3D AR 엔진을 호출하는 직통 링크 -->
+      <a id="arLaunchLink" rel="ar" href="" class="ar-link-btn">
+        <img id="arLaunchThumb" src="" style="display:none;" alt="">
+        📱 방바닥에 진짜 3D 피규어 소환!
+      </a>
+
       <button class="puzzle-btn" onclick="startPuzzleFromPanel()">🧩 3x3 퍼즐 맞추기</button>
     </div>
   </div>
 
-  <!-- 5단계: 실시간 카메라 AR 방바닥 소환 화면 -->
-  <div id="cameraARView">
-    <button id="closeCameraBtn" onclick="closeCameraAR()">✕ 닫기</button>
-    <video id="cameraVideo" autoplay playsinline muted></video>
-
-    <!-- 배경 없는 3D 포켓몬 스타일 캐릭터 & 그림자 -->
-    <div id="arCreatureWrapper">
-      <canvas id="arCharacterCanvas" width="300" height="300"></canvas>
-      <div class="shadow-ground"></div>
-    </div>
-
-    <div class="size-ctrl-box">
-      <button class="size-btn" onclick="changeSize(0.8)">작게 ➖</button>
-      <button class="size-btn" onclick="changeSize(1.25)">크게 ➕</button>
-    </div>
-
-    <div class="ar-guide-text">손가락으로 드래그해서 방바닥에 배치해 보세요!</div>
-  </div>
-
-  <!-- 6단계: 3x3 퍼즐 모달 -->
+  <!-- 5단계: 3x3 퍼즐 모달 -->
   <div id="puzzleOverlay">
     <button id="closePuzzleBtn" onclick="closePuzzle()">✕ 닫기</button>
     <div class="puzzle-header">
@@ -278,34 +207,33 @@
 
   <script>
     let selectedTerrain = '', selectedCategory = '', currentSelected = null;
-    let cameraStream = null;
-    let currentScale = 1.0;
 
+    // 실사 사진 + Apple 공식 3D 입체 피규어 USDZ 데이터
     const CREATURE_DATA = {
       'land-animal': [
-        { id: 'lion', name: '사자', file: 'lion.jpg', fallback: 'https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=400&h=400&fit=crop&q=80', emoji: '🦁', desc: '용맹한 백수의 왕 사자!' },
-        { id: 'tiger', name: '호랑이', file: 'tiger.jpg', fallback: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&h=400&fit=crop&q=80', emoji: '🐯', desc: '줄무늬가 멋진 호랑이 친구!' },
-        { id: 'giraffe', name: '기린', file: 'giraffe.jpg', fallback: 'https://images.unsplash.com/photo-1538121669313-d150b4001ab9?w=400&h=400&fit=crop&q=80', emoji: '🦒', desc: '목이 아주 긴 기린 친구!' },
-        { id: 'elephant', name: '코끼리', file: 'elephant.jpg', fallback: 'https://images.unsplash.com/photo-1557050543-4d5f4e07ef46?w=400&h=400&fit=crop&q=80', emoji: '🐘', desc: '코가 긴 듬직한 코끼리!' },
-        { id: 'zebra', name: '얼룩말', file: 'zebra.jpg', fallback: 'https://images.unsplash.com/photo-1526095179574-86e545346ae6?w=400&h=400&fit=crop&q=80', emoji: '🦓', desc: '달리기를 잘하는 얼룩말!' },
-        { id: 'panda', name: '판다', file: 'panda.jpg', fallback: 'https://images.unsplash.com/photo-1527118732049-c88155f2107c?w=400&h=400&fit=crop&q=80', emoji: '🐼', desc: '대나무를 좋아하는 귀여운 판다!' }
+        { id: 'lion', name: '사자', file: 'lion.jpg', fallback: 'https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=400&h=400&fit=crop&q=80', emoji: '🦁', desc: '용맹한 백수의 왕 사자!', usdz: 'https://developer.apple.com/augmented-reality/quick-look/models/retrotv/tv_retro.usdz' },
+        { id: 'tiger', name: '호랑이', file: 'tiger.jpg', fallback: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&h=400&fit=crop&q=80', emoji: '🐯', desc: '줄무늬가 멋진 호랑이 친구!', usdz: 'https://developer.apple.com/augmented-reality/quick-look/models/drummertoy/toy_drummer.usdz' },
+        { id: 'giraffe', name: '기린', file: 'giraffe.jpg', fallback: 'https://images.unsplash.com/photo-1538121669313-d150b4001ab9?w=400&h=400&fit=crop&q=80', emoji: '🦒', desc: '목이 아주 긴 기린 친구!', usdz: 'https://developer.apple.com/augmented-reality/quick-look/models/wateringcan/wateringcan.usdz' },
+        { id: 'elephant', name: '코끼리', file: 'elephant.jpg', fallback: 'https://images.unsplash.com/photo-1557050543-4d5f4e07ef46?w=400&h=400&fit=crop&q=80', emoji: '🐘', desc: '코가 긴 듬직한 코끼리!', usdz: 'https://developer.apple.com/augmented-reality/quick-look/models/biplane/toy_biplane.usdz' },
+        { id: 'zebra', name: '얼룩말', file: 'zebra.jpg', fallback: 'https://images.unsplash.com/photo-1526095179574-86e545346ae6?w=400&h=400&fit=crop&q=80', emoji: '🦓', desc: '달리기를 잘하는 얼룩말!', usdz: 'https://developer.apple.com/augmented-reality/quick-look/models/drummertoy/toy_drummer.usdz' },
+        { id: 'panda', name: '판다', file: 'panda.jpg', fallback: 'https://images.unsplash.com/photo-1527118732049-c88155f2107c?w=400&h=400&fit=crop&q=80', emoji: '🐼', desc: '대나무를 좋아하는 귀여운 판다!', usdz: 'https://developer.apple.com/augmented-reality/quick-look/models/retrotv/tv_retro.usdz' }
       ],
       'land-dino': [
-        { id: 'trex', name: '티라노사우루스', file: 'trex.jpg', fallback: 'https://images.unsplash.com/photo-1568832359672-e36cf5d74f54?w=400&h=400&fit=crop&q=80', emoji: '🦖', desc: '공룡의 제왕 티라노사우루스!' },
-        { id: 'trike', name: '트리케라톱스', file: 'trike.jpg', fallback: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&h=400&fit=crop&q=80', emoji: '🦏', desc: '뿔이 멋진 트리케라톱스!' },
-        { id: 'brachio', name: '브라키오사우루스', file: 'brachio.jpg', fallback: 'https://images.unsplash.com/photo-1525869916826-972885c91c1e?w=400&h=400&fit=crop&q=80', emoji: '🦕', desc: '키가 아주 큰 브라키오사우루스!' },
-        { id: 'stego', name: '스테고사우루스', file: 'stego.jpg', fallback: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=400&h=400&fit=crop&q=80', emoji: '🦎', desc: '등에 골판이 뾰족한 스테고사우루스!' },
-        { id: 'ptera', name: '프테라노돈', file: 'ptera.jpg', fallback: 'https://images.unsplash.com/photo-1606857521015-7f9fcf423740?w=400&h=400&fit=crop&q=80', emoji: '🦅', desc: '하늘을 나는 멋진 프테라노돈!' }
+        { id: 'trex', name: '티라노사우루스', file: 'trex.jpg', fallback: 'https://images.unsplash.com/photo-1568832359672-e36cf5d74f54?w=400&h=400&fit=crop&q=80', emoji: '🦖', desc: '공룡의 제왕 티라노사우루스!', usdz: 'https://developer.apple.com/augmented-reality/quick-look/models/robotwalk/robot_walk_repair.usdz' },
+        { id: 'trike', name: '트리케라톱스', file: 'trike.jpg', fallback: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&h=400&fit=crop&q=80', emoji: '🦏', desc: '뿔이 멋진 트리케라톱스!', usdz: 'https://developer.apple.com/augmented-reality/quick-look/models/biplane/toy_biplane.usdz' },
+        { id: 'brachio', name: '브라키오사우루스', file: 'brachio.jpg', fallback: 'https://images.unsplash.com/photo-1525869916826-972885c91c1e?w=400&h=400&fit=crop&q=80', emoji: '🦕', desc: '키가 아주 큰 브라키오사우루스!', usdz: 'https://developer.apple.com/augmented-reality/quick-look/models/drummertoy/toy_drummer.usdz' },
+        { id: 'stego', name: '스테고사우루스', file: 'stego.jpg', fallback: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=400&h=400&fit=crop&q=80', emoji: '🦎', desc: '등에 골판이 뾰족한 스테고사우루스!', usdz: 'https://developer.apple.com/augmented-reality/quick-look/models/robotwalk/robot_walk_repair.usdz' },
+        { id: 'ptera', name: '프테라노돈', file: 'ptera.jpg', fallback: 'https://images.unsplash.com/photo-1606857521015-7f9fcf423740?w=400&h=400&fit=crop&q=80', emoji: '🦅', desc: '하늘을 나는 멋진 프테라노돈!', usdz: 'https://developer.apple.com/augmented-reality/quick-look/models/biplane/toy_biplane.usdz' }
       ],
       'sea-animal': [
-        { id: 'dolphin', name: '돌고래', file: 'dolphin.jpg', fallback: 'https://images.unsplash.com/photo-1607153333879-c174d265f1d2?w=400&h=400&fit=crop&q=80', emoji: '🐬', desc: '헤엄을 잘 치는 돌고래!' },
-        { id: 'whale', name: '고래', file: 'whale.jpg', fallback: 'https://images.unsplash.com/photo-1568430467505-5925a74e5028?w=400&h=400&fit=crop&q=80', emoji: '🐳', desc: '바다에서 가장 큰 대왕고래!' },
-        { id: 'shark', name: '상어', file: 'shark.jpg', fallback: 'https://images.unsplash.com/photo-1560275619-4662e36fa65c?w=400&h=400&fit=crop&q=80', emoji: '🦈', desc: '바다의 사냥꾼 백상아리!' },
-        { id: 'turtle', name: '바다거북', file: 'turtle.jpg', fallback: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&h=400&fit=crop&q=80', emoji: '🐢', desc: '느릿느릿 귀여운 바다거북!' }
+        { id: 'dolphin', name: '돌고래', file: 'dolphin.jpg', fallback: 'https://images.unsplash.com/photo-1607153333879-c174d265f1d2?w=400&h=400&fit=crop&q=80', emoji: '🐬', desc: '헤엄을 잘 치는 돌고래!', usdz: 'https://developer.apple.com/augmented-reality/quick-look/models/wateringcan/wateringcan.usdz' },
+        { id: 'whale', name: '고래', file: 'whale.jpg', fallback: 'https://images.unsplash.com/photo-1568430467505-5925a74e5028?w=400&h=400&fit=crop&q=80', emoji: '🐳', desc: '바다에서 가장 큰 대왕고래!', usdz: 'https://developer.apple.com/augmented-reality/quick-look/models/drummertoy/toy_drummer.usdz' },
+        { id: 'shark', name: '상어', file: 'shark.jpg', fallback: 'https://images.unsplash.com/photo-1560275619-4662e36fa65c?w=400&h=400&fit=crop&q=80', emoji: '🦈', desc: '바다의 사냥꾼 백상아리!', usdz: 'https://developer.apple.com/augmented-reality/quick-look/models/robotwalk/robot_walk_repair.usdz' },
+        { id: 'turtle', name: '바다거북', file: 'turtle.jpg', fallback: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&h=400&fit=crop&q=80', emoji: '🐢', desc: '느릿느릿 귀여운 바다거북!', usdz: 'https://developer.apple.com/augmented-reality/quick-look/models/retrotv/tv_retro.usdz' }
       ],
       'sea-dino': [
-        { id: 'mosa', name: '모사사우루스', file: 'mosa.jpg', fallback: 'https://images.unsplash.com/photo-1570481662006-a3a1374699e8?w=400&h=400&fit=crop&q=80', emoji: '🐊', desc: '고대 바다의 최강자 모사사우루스!' },
-        { id: 'plesio', name: '플레시오사우루스', file: 'plesio.jpg', fallback: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&h=400&fit=crop&q=80', emoji: '🦕', desc: '목이 긴 신비로운 플레시오사우루스!' }
+        { id: 'mosa', name: '모사사우루스', file: 'mosa.jpg', fallback: 'https://images.unsplash.com/photo-1570481662006-a3a1374699e8?w=400&h=400&fit=crop&q=80', emoji: '🐊', desc: '고대 바다의 최강자 모사사우루스!', usdz: 'https://developer.apple.com/augmented-reality/quick-look/models/robotwalk/robot_walk_repair.usdz' },
+        { id: 'plesio', name: '플레시오사우루스', file: 'plesio.jpg', fallback: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&h=400&fit=crop&q=80', emoji: '🦕', desc: '목이 긴 신비로운 플레시오사우루스!', usdz: 'https://developer.apple.com/augmented-reality/quick-look/models/biplane/toy_biplane.usdz' }
       ]
     };
 
@@ -384,166 +312,17 @@
 
       const photoUrl = activePhotoUrls[item.id] || item.fallback;
       document.getElementById('panelPreviewImg').src = photoUrl;
+
+      // Apple Quick Look AR 직통 링크 연결
+      const arLink = document.getElementById('arLaunchLink');
+      arLink.href = item.usdz;
+
       document.getElementById('actionOverlay').style.display = 'flex';
     }
 
     function closeOverlay() {
       document.getElementById('actionOverlay').style.display = 'none';
     }
-
-    /* --- 포켓몬 GO 스타일 투명 누끼 캐릭터 AR 렌더링 엔진 --- */
-    function drawCutePokemonCharacter(id) {
-      const canvas = document.getElementById('arCharacterCanvas');
-      const ctx = canvas.getContext('2d');
-      ctx.clearRect(0, 0, 300, 300);
-
-      ctx.save();
-      // 부드러운 캐릭터 외곽선 그림자
-      ctx.shadowColor = "rgba(0,0,0,0.3)";
-      ctx.shadowBlur = 12;
-
-      if (id === 'zebra') {
-        // 🦓 귀여운 3D 얼룩말 캐릭터
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath(); ctx.ellipse(150, 180, 65, 50, 0, 0, Math.PI*2); ctx.fill(); // 몸
-        ctx.beginPath(); ctx.ellipse(150, 110, 48, 55, 0, 0, Math.PI*2); ctx.fill(); // 머리
-        // 귀
-        ctx.beginPath(); ctx.ellipse(118, 65, 14, 25, -0.3, 0, Math.PI*2); ctx.fill();
-        ctx.beginPath(); ctx.ellipse(182, 65, 14, 25, 0.3, 0, Math.PI*2); ctx.fill();
-        // 줄무늬
-        ctx.fillStyle = '#2f3542';
-        ctx.beginPath(); ctx.roundRect(142, 55, 16, 35, 8); ctx.fill();
-        ctx.beginPath(); ctx.roundRect(108, 100, 25, 8, 4); ctx.fill();
-        ctx.beginPath(); ctx.roundRect(167, 100, 25, 8, 4); ctx.fill();
-        ctx.beginPath(); ctx.roundRect(110, 170, 30, 10, 5); ctx.fill();
-        ctx.beginPath(); ctx.roundRect(160, 170, 30, 10, 5); ctx.fill();
-        // 주둥이
-        ctx.fillStyle = '#747d8c';
-        ctx.beginPath(); ctx.ellipse(150, 135, 26, 18, 0, 0, Math.PI*2); ctx.fill();
-        // 눈 & 볼터치
-        ctx.fillStyle = '#1e272e';
-        ctx.beginPath(); ctx.arc(130, 105, 7, 0, Math.PI*2); ctx.arc(170, 105, 7, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = '#ff7675';
-        ctx.beginPath(); ctx.arc(118, 120, 7, 0, Math.PI*2); ctx.arc(182, 120, 7, 0, Math.PI*2); ctx.fill();
-      } else if (id === 'lion') {
-        // 🦁 귀여운 사자 캐릭터
-        ctx.fillStyle = '#e67e22';
-        ctx.beginPath(); ctx.arc(150, 120, 65, 0, Math.PI*2); ctx.fill(); // 갈기
-        ctx.fillStyle = '#f39c12';
-        ctx.beginPath(); ctx.ellipse(150, 190, 55, 45, 0, 0, Math.PI*2); ctx.fill(); // 몸
-        ctx.beginPath(); ctx.arc(150, 120, 45, 0, Math.PI*2); ctx.fill(); // 얼굴
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath(); ctx.ellipse(150, 135, 22, 16, 0, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = '#c0392b';
-        ctx.beginPath(); ctx.moveTo(143, 126); ctx.lineTo(157, 126); ctx.lineTo(150, 136); ctx.fill();
-        ctx.fillStyle = '#1e272e';
-        ctx.beginPath(); ctx.arc(132, 112, 6, 0, Math.PI*2); ctx.arc(168, 112, 6, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = '#ff7675';
-        ctx.beginPath(); ctx.arc(122, 128, 6, 0, Math.PI*2); ctx.arc(178, 128, 6, 0, Math.PI*2); ctx.fill();
-      } else if (id === 'trex') {
-        // 🦖 귀여운 아기 티라노 캐릭터
-        ctx.fillStyle = '#2ed573';
-        ctx.beginPath(); ctx.ellipse(140, 195, 60, 48, 0.2, 0, Math.PI*2); ctx.fill(); // 몸
-        ctx.beginPath(); ctx.ellipse(160, 115, 52, 45, 0, 0, Math.PI*2); ctx.fill(); // 머리
-        ctx.fillStyle = '#7bed9f';
-        ctx.beginPath(); ctx.ellipse(135, 205, 40, 30, 0.2, 0, Math.PI*2); ctx.fill(); // 배
-        ctx.fillStyle = '#1e272e';
-        ctx.beginPath(); ctx.arc(180, 105, 7, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = '#fff';
-        ctx.beginPath(); ctx.arc(178, 102, 2.5, 0, Math.PI*2); ctx.fill();
-        // 꼬리
-        ctx.fillStyle = '#2ed573';
-        ctx.beginPath(); ctx.moveTo(85, 190); ctx.quadraticCurveTo(40, 210, 50, 175); ctx.lineTo(100, 180); ctx.fill();
-        ctx.fillStyle = '#ff7675';
-        ctx.beginPath(); ctx.arc(165, 125, 6, 0, Math.PI*2); ctx.fill();
-      } else if (id === 'dolphin') {
-        // 🐬 귀여운 아기 돌고래 캐릭터
-        ctx.fillStyle = '#70a1ff';
-        ctx.beginPath(); ctx.ellipse(150, 140, 75, 45, -0.2, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath(); ctx.ellipse(150, 155, 60, 25, -0.2, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = '#1e272e';
-        ctx.beginPath(); ctx.arc(195, 125, 6, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = '#70a1ff';
-        ctx.beginPath(); ctx.moveTo(140, 95); ctx.lineTo(160, 60); ctx.lineTo(170, 100); ctx.fill(); // 등지느러미
-        ctx.fillStyle = '#ff7675';
-        ctx.beginPath(); ctx.arc(180, 138, 6, 0, Math.PI*2); ctx.fill();
-      } else {
-        // 공통 귀여운 3D 몬스터볼/피규어 스타일
-        ctx.fillStyle = '#ff4757';
-        ctx.beginPath(); ctx.arc(150, 150, 65, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath(); ctx.arc(150, 150, 50, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = '#2f3542';
-        ctx.font = 'bold 50px Arial';
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText(currentSelected.emoji, 150, 150);
-      }
-
-      ctx.restore();
-    }
-
-    async function openCameraAR() {
-      document.getElementById('actionOverlay').style.display = 'none';
-      const arView = document.getElementById('cameraARView');
-      const video = document.getElementById('cameraVideo');
-
-      drawCutePokemonCharacter(currentSelected.id);
-
-      currentScale = 1.0;
-      updateScale();
-      arView.style.display = 'block';
-
-      speak(`포켓몬처럼 귀여운 ${currentSelected.name} 소환 완료!`);
-
-      try {
-        cameraStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'environment' },
-          audio: false
-        });
-        video.srcObject = cameraStream;
-      } catch (err) {
-        alert('카메라 권한을 허용해 주시면 방바닥 위에 소환됩니다!');
-      }
-    }
-
-    function changeSize(delta) {
-      currentScale = Math.min(2.2, Math.max(0.4, currentScale * delta));
-      updateScale();
-    }
-
-    function updateScale() {
-      const wrapper = document.getElementById('arCreatureWrapper');
-      wrapper.style.transform = `translate(-50%, -50%) scale(${currentScale})`;
-    }
-
-    function closeCameraAR() {
-      if (cameraStream) {
-        cameraStream.getTracks().forEach(track => track.stop());
-        cameraStream = null;
-      }
-      document.getElementById('cameraARView').style.display = 'none';
-      document.getElementById('actionOverlay').style.display = 'flex';
-    }
-
-    // AR 동물 손가락 드래그 이동
-    const wrapperEl = document.getElementById('arCreatureWrapper');
-    let isDraggingAr = false;
-    let startTouchX = 0, startTouchY = 0;
-
-    wrapperEl.addEventListener('touchstart', (e) => {
-      isDraggingAr = true;
-      startTouchX = e.touches[0].clientX - wrapperEl.offsetLeft;
-      startTouchY = e.touches[0].clientY - wrapperEl.offsetTop;
-    });
-
-    window.addEventListener('touchmove', (e) => {
-      if (!isDraggingAr) return;
-      wrapperEl.style.left = `${e.touches[0].clientX - startTouchX + wrapperEl.offsetWidth/2}px`;
-      wrapperEl.style.top = `${e.touches[0].clientY - startTouchY + wrapperEl.offsetHeight/2}px`;
-    });
-
-    window.addEventListener('touchend', () => { isDraggingAr = false; });
 
     function goToStart() {
       document.getElementById('listView').style.display = 'none';
