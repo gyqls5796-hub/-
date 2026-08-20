@@ -2,7 +2,6 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="referrer" content="no-referrer">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
   <title>동물 & 공룡 서식지 탐험</title>
   <style>
@@ -122,26 +121,40 @@
     let currentSelected = null;
     let animId = null;
 
-    // 실제 동물 & 공룡 실사 사진 (차단 방지 CDN 프록시 적용)
-    const REAL_PHOTO_URLS = {
-      lion: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/7/73/Lion_waiting_in_Namibia.jpg/600px-Lion_waiting_in_Namibia.jpg&w=400&h=400&fit=cover",
-      giraffe: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Giraffe_Mikumi_National_Park.jpg/600px-Giraffe_Mikumi_National_Park.jpg&w=400&h=400&fit=cover",
-      monkey: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/4/43/Bonnet_macaque_%28Macaca_radiata%29_Photograph_By_Shantanu_Kuveskar.jpg/600px-Bonnet_macaque_%28Macaca_radiata%29_Photograph_By_Shantanu_Kuveskar.jpg&w=400&h=400&fit=cover",
-      t_rex: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/9/94/Tyrannosaurus_Rex_Holotype.jpg/600px-Tyrannosaurus_Rex_Holotype.jpg&w=400&h=400&fit=cover",
-      trike: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Triceratops_prorsus_Marsh_1890_%28AMNH_5116%29.jpg/600px-Triceratops_prorsus_Marsh_1890_%28AMNH_5116%29.jpg&w=400&h=400&fit=cover",
-      pteranodon: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Pteranodon_longiceps_at_the_Field_Museum.JPG/600px-Pteranodon_longiceps_at_the_Field_Museum.JPG&w=400&h=400&fit=cover",
-      dolphin: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/1/10/Tursiops_truncatus_01.jpg/600px-Tursiops_truncatus_01.jpg&w=400&h=400&fit=cover",
-      turtle: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Green_Sea_Turtle_grazing_seagrass.jpg/600px-Green_Sea_Turtle_grazing_seagrass.jpg&w=400&h=400&fit=cover",
-      whale: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/5/54/Humpback_Whale_underwater_shot.jpg/600px-Humpback_Whale_underwater_shot.jpg&w=400&h=400&fit=cover",
-      plesio: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/3/30/Plesiosaurus_dolichodeirus_1.jpg/600px-Plesiosaurus_dolichodeirus_1.jpg&w=400&h=400&fit=cover",
-      mosa: "https://images.weserv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Mosasaurus_hoffmanni_Maastricht.JPG/600px-Mosasaurus_hoffmanni_Maastricht.JPG&w=400&h=400&fit=cover"
+    // 깃허브에 올린 파일 경로 (파일이 없으면 대체 온라인 사진 로딩)
+    const CREATURE_IMAGES = {
+      lion: ["lion.jpg", "https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=400&q=80"],
+      giraffe: ["giraffe.jpg", "https://images.unsplash.com/photo-1538121669313-d150b4001ab9?w=400&q=80"],
+      monkey: ["monkey.jpg", "https://images.unsplash.com/photo-1540573133985-87b6da6d54a9?w=400&q=80"],
+      trex: ["trex.jpg", "https://images.unsplash.com/photo-1568832359672-e36cf5d74f54?w=400&q=80"],
+      trike: ["trike.jpg", "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&q=80"],
+      ptera: ["ptera.jpg", "https://images.unsplash.com/photo-1525869916826-972885c91c1e?w=400&q=80"],
+      dolphin: ["dolphin.jpg", "https://images.unsplash.com/photo-1607153333879-c174d265f1d2?w=400&q=80"],
+      turtle: ["turtle.jpg", "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&q=80"],
+      whale: ["whale.jpg", "https://images.unsplash.com/photo-1568430467505-5925a74e5028?w=400&q=80"],
+      plesio: ["plesio.jpg", "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&q=80"],
+      mosa: ["mosa.jpg", "https://images.unsplash.com/photo-1570481662006-a3a1374699e8?w=400&q=80"]
     };
 
     const loadedImgs = {};
-    for (let key in REAL_PHOTO_URLS) {
+    const loadedUrls = {};
+
+    // 이미지 로드 시 로컬 파일 -> 온라인 URL 단계적 시도
+    for (let key in CREATURE_IMAGES) {
       const img = new Image();
-      img.src = REAL_PHOTO_URLS[key];
+      const [localPath, fallbackUrl] = CREATURE_IMAGES[key];
+      
+      img.onload = () => {
+        loadedUrls[key] = img.src;
+      };
+      img.onerror = () => {
+        if (img.src.indexOf(fallbackUrl) === -1) {
+          img.src = fallbackUrl;
+        }
+      };
+      img.src = localPath;
       loadedImgs[key] = img;
+      loadedUrls[key] = localPath;
     }
 
     function resize() {
@@ -202,8 +215,8 @@
           { name: '🏜️ 붉은 평원 (트리케라톱스)', grad: ['#e58e26', '#b71540'], y: zoneH * 2, h: zoneH }
         ];
         entities = [
-          { name: '프테라노돈', key: 'pteranodon', x: w * 0.3, y: zoneH * 0.5, vx: 0.9, vy: 0.3, minX: 60, maxX: w - 60, minY: 60, maxY: zoneH - 60 },
-          { name: '티라노사우루스', key: 't_rex', x: w * 0.5, y: zoneH * 1.5, vx: -0.6, vy: 0.2, minX: 60, maxX: w - 60, minY: zoneH + 60, maxY: zoneH * 2 - 60 },
+          { name: '프테라노돈', key: 'ptera', x: w * 0.3, y: zoneH * 0.5, vx: 0.9, vy: 0.3, minX: 60, maxX: w - 60, minY: 60, maxY: zoneH - 60 },
+          { name: '티라노사우루스', key: 'trex', x: w * 0.5, y: zoneH * 1.5, vx: -0.6, vy: 0.2, minX: 60, maxX: w - 60, minY: zoneH + 60, maxY: zoneH * 2 - 60 },
           { name: '트리케라톱스', key: 'trike', x: w * 0.7, y: zoneH * 2.5, vx: 0.5, vy: -0.3, minX: 60, maxX: w - 60, minY: zoneH * 2 + 60, maxY: h - 60 }
         ];
       } else if (terrain === 'sea' && category === 'animal') {
@@ -360,7 +373,7 @@
     function renderDragBoard() {
       const board = document.getElementById('puzzleBoard');
       board.innerHTML = '';
-      const photoUrl = REAL_PHOTO_URLS[currentSelected.key];
+      const photoUrl = loadedUrls[currentSelected.key] || loadedImgs[currentSelected.key].src;
 
       for (let slot = 0; slot < 9; slot++) {
         const tileId = positions[slot];
