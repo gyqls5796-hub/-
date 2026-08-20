@@ -118,26 +118,32 @@
     }
     #cameraVideo { width: 100vw; height: 100vh; object-fit: cover; }
 
-    /* 소환된 생명체 및 바닥 그림자 */
+    /* 포켓몬 GO 캐릭터 피규어 및 통통 튀는 모션 */
     #arCreatureWrapper {
-      position: absolute; top: 60%; left: 50%;
+      position: absolute; top: 62%; left: 50%;
       transform: translate(-50%, -50%);
       display: flex; flex-direction: column; align-items: center;
       cursor: grab; touch-action: none;
     }
-    #arCreatureCanvas {
-      width: 200px; height: 200px;
-      filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));
-      animation: creatureHover 2.2s infinite ease-in-out;
+    #arCharacterCanvas {
+      width: 220px; height: 220px;
+      animation: pokemonBounce 1.6s infinite ease-in-out;
     }
-    @keyframes creatureHover {
-      0%, 100% { transform: translateY(0px); }
-      50% { transform: translateY(-12px); }
+    @keyframes pokemonBounce {
+      0%, 100% { transform: translateY(0px) scale(1, 1); }
+      40% { transform: translateY(-28px) scale(0.96, 1.04); }
+      70% { transform: translateY(0px) scale(1.05, 0.95); }
     }
     .shadow-ground {
-      width: 140px; height: 25px;
-      background: radial-gradient(ellipse at center, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 70%);
-      margin-top: -10px; border-radius: 50%;
+      width: 150px; height: 26px;
+      background: radial-gradient(ellipse at center, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0) 70%);
+      margin-top: -15px; border-radius: 50%;
+      animation: shadowScale 1.6s infinite ease-in-out;
+    }
+    @keyframes shadowScale {
+      0%, 100% { transform: scale(1); opacity: 0.55; }
+      40% { transform: scale(0.75); opacity: 0.25; }
+      70% { transform: scale(1.08); opacity: 0.6; }
     }
 
     /* 크기 조절 컨트롤러 */
@@ -146,7 +152,7 @@
       display: flex; gap: 12px; z-index: 210;
     }
     .size-btn {
-      font-size: 1.2rem; font-weight: bold; padding: 10px 18px; border-radius: 20px;
+      font-size: 1.15rem; font-weight: bold; padding: 10px 18px; border-radius: 20px;
       border: none; background: rgba(255,255,255,0.9); color: #2f3542; cursor: pointer;
       box-shadow: 0 4px 10px rgba(0,0,0,0.3);
     }
@@ -245,9 +251,9 @@
     <button id="closeCameraBtn" onclick="closeCameraAR()">✕ 닫기</button>
     <video id="cameraVideo" autoplay playsinline muted></video>
 
-    <!-- 바닥에 소환되는 생명체 -->
+    <!-- 배경 없는 3D 포켓몬 스타일 캐릭터 & 그림자 -->
     <div id="arCreatureWrapper">
-      <canvas id="arCreatureCanvas" width="300" height="300"></canvas>
+      <canvas id="arCharacterCanvas" width="300" height="300"></canvas>
       <div class="shadow-ground"></div>
     </div>
 
@@ -385,40 +391,110 @@
       document.getElementById('actionOverlay').style.display = 'none';
     }
 
-    /* --- 포켓몬 GO 실사 누끼 방바닥 소환 렌더러 --- */
+    /* --- 포켓몬 GO 스타일 투명 누끼 캐릭터 AR 렌더링 엔진 --- */
+    function drawCutePokemonCharacter(id) {
+      const canvas = document.getElementById('arCharacterCanvas');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, 300, 300);
+
+      ctx.save();
+      // 부드러운 캐릭터 외곽선 그림자
+      ctx.shadowColor = "rgba(0,0,0,0.3)";
+      ctx.shadowBlur = 12;
+
+      if (id === 'zebra') {
+        // 🦓 귀여운 3D 얼룩말 캐릭터
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath(); ctx.ellipse(150, 180, 65, 50, 0, 0, Math.PI*2); ctx.fill(); // 몸
+        ctx.beginPath(); ctx.ellipse(150, 110, 48, 55, 0, 0, Math.PI*2); ctx.fill(); // 머리
+        // 귀
+        ctx.beginPath(); ctx.ellipse(118, 65, 14, 25, -0.3, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(182, 65, 14, 25, 0.3, 0, Math.PI*2); ctx.fill();
+        // 줄무늬
+        ctx.fillStyle = '#2f3542';
+        ctx.beginPath(); ctx.roundRect(142, 55, 16, 35, 8); ctx.fill();
+        ctx.beginPath(); ctx.roundRect(108, 100, 25, 8, 4); ctx.fill();
+        ctx.beginPath(); ctx.roundRect(167, 100, 25, 8, 4); ctx.fill();
+        ctx.beginPath(); ctx.roundRect(110, 170, 30, 10, 5); ctx.fill();
+        ctx.beginPath(); ctx.roundRect(160, 170, 30, 10, 5); ctx.fill();
+        // 주둥이
+        ctx.fillStyle = '#747d8c';
+        ctx.beginPath(); ctx.ellipse(150, 135, 26, 18, 0, 0, Math.PI*2); ctx.fill();
+        // 눈 & 볼터치
+        ctx.fillStyle = '#1e272e';
+        ctx.beginPath(); ctx.arc(130, 105, 7, 0, Math.PI*2); ctx.arc(170, 105, 7, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#ff7675';
+        ctx.beginPath(); ctx.arc(118, 120, 7, 0, Math.PI*2); ctx.arc(182, 120, 7, 0, Math.PI*2); ctx.fill();
+      } else if (id === 'lion') {
+        // 🦁 귀여운 사자 캐릭터
+        ctx.fillStyle = '#e67e22';
+        ctx.beginPath(); ctx.arc(150, 120, 65, 0, Math.PI*2); ctx.fill(); // 갈기
+        ctx.fillStyle = '#f39c12';
+        ctx.beginPath(); ctx.ellipse(150, 190, 55, 45, 0, 0, Math.PI*2); ctx.fill(); // 몸
+        ctx.beginPath(); ctx.arc(150, 120, 45, 0, Math.PI*2); ctx.fill(); // 얼굴
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath(); ctx.ellipse(150, 135, 22, 16, 0, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#c0392b';
+        ctx.beginPath(); ctx.moveTo(143, 126); ctx.lineTo(157, 126); ctx.lineTo(150, 136); ctx.fill();
+        ctx.fillStyle = '#1e272e';
+        ctx.beginPath(); ctx.arc(132, 112, 6, 0, Math.PI*2); ctx.arc(168, 112, 6, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#ff7675';
+        ctx.beginPath(); ctx.arc(122, 128, 6, 0, Math.PI*2); ctx.arc(178, 128, 6, 0, Math.PI*2); ctx.fill();
+      } else if (id === 'trex') {
+        // 🦖 귀여운 아기 티라노 캐릭터
+        ctx.fillStyle = '#2ed573';
+        ctx.beginPath(); ctx.ellipse(140, 195, 60, 48, 0.2, 0, Math.PI*2); ctx.fill(); // 몸
+        ctx.beginPath(); ctx.ellipse(160, 115, 52, 45, 0, 0, Math.PI*2); ctx.fill(); // 머리
+        ctx.fillStyle = '#7bed9f';
+        ctx.beginPath(); ctx.ellipse(135, 205, 40, 30, 0.2, 0, Math.PI*2); ctx.fill(); // 배
+        ctx.fillStyle = '#1e272e';
+        ctx.beginPath(); ctx.arc(180, 105, 7, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.beginPath(); ctx.arc(178, 102, 2.5, 0, Math.PI*2); ctx.fill();
+        // 꼬리
+        ctx.fillStyle = '#2ed573';
+        ctx.beginPath(); ctx.moveTo(85, 190); ctx.quadraticCurveTo(40, 210, 50, 175); ctx.lineTo(100, 180); ctx.fill();
+        ctx.fillStyle = '#ff7675';
+        ctx.beginPath(); ctx.arc(165, 125, 6, 0, Math.PI*2); ctx.fill();
+      } else if (id === 'dolphin') {
+        // 🐬 귀여운 아기 돌고래 캐릭터
+        ctx.fillStyle = '#70a1ff';
+        ctx.beginPath(); ctx.ellipse(150, 140, 75, 45, -0.2, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath(); ctx.ellipse(150, 155, 60, 25, -0.2, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#1e272e';
+        ctx.beginPath(); ctx.arc(195, 125, 6, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#70a1ff';
+        ctx.beginPath(); ctx.moveTo(140, 95); ctx.lineTo(160, 60); ctx.lineTo(170, 100); ctx.fill(); // 등지느러미
+        ctx.fillStyle = '#ff7675';
+        ctx.beginPath(); ctx.arc(180, 138, 6, 0, Math.PI*2); ctx.fill();
+      } else {
+        // 공통 귀여운 3D 몬스터볼/피규어 스타일
+        ctx.fillStyle = '#ff4757';
+        ctx.beginPath(); ctx.arc(150, 150, 65, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath(); ctx.arc(150, 150, 50, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#2f3542';
+        ctx.font = 'bold 50px Arial';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(currentSelected.emoji, 150, 150);
+      }
+
+      ctx.restore();
+    }
+
     async function openCameraAR() {
       document.getElementById('actionOverlay').style.display = 'none';
       const arView = document.getElementById('cameraARView');
       const video = document.getElementById('cameraVideo');
-      const canvas = document.getElementById('arCreatureCanvas');
-      const ctx = canvas.getContext('2d');
 
-      // 네모난 배경을 원형/투명 누끼 형태로 부드럽게 렌더링
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.src = activePhotoUrls[currentSelected.id] || currentSelected.fallback;
-      img.onload = () => {
-        ctx.clearRect(0, 0, 300, 300);
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(150, 150, 130, 0, Math.PI * 2);
-        ctx.closePath();
-        ctx.clip();
-        ctx.drawImage(img, 0, 0, 300, 300);
-        ctx.restore();
-
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
-        ctx.lineWidth = 6;
-        ctx.beginPath();
-        ctx.arc(150, 150, 130, 0, Math.PI * 2);
-        ctx.stroke();
-      };
+      drawCutePokemonCharacter(currentSelected.id);
 
       currentScale = 1.0;
       updateScale();
       arView.style.display = 'block';
 
-      speak(`방바닥에 ${currentSelected.name} 소환 완료!`);
+      speak(`포켓몬처럼 귀여운 ${currentSelected.name} 소환 완료!`);
 
       try {
         cameraStream = await navigator.mediaDevices.getUserMedia({
@@ -432,7 +508,7 @@
     }
 
     function changeSize(delta) {
-      currentScale = Math.min(2.0, Math.max(0.4, currentScale * delta));
+      currentScale = Math.min(2.2, Math.max(0.4, currentScale * delta));
       updateScale();
     }
 
