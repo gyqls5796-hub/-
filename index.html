@@ -6,9 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
   <title>미니 동물 & 공룡 AR 도감</title>
   
-  <!-- [필수] 구글 model-viewer 최신 스크립트 -->
-  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
-  
   <style>
     * { box-sizing: border-box; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
     body {
@@ -35,7 +32,7 @@
     }
     .big-choice-btn:active { transform: scale(0.95); }
 
-    /* 3단계: 도감 헤더 & 그리드 */
+    /* 3단계: 도감 목록 화면 */
     #listView { display: none; min-height: 100vh; }
     header {
       position: sticky; top: 0; background: #ffffff; padding: 10px 14px;
@@ -71,7 +68,7 @@
     .card-img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .card-name { font-size: 1.1rem; font-weight: 800; margin-top: 10px; color: #2f3542; }
 
-    /* 4단계: AR 및 3D 뷰어 모달 */
+    /* 4단계: 선택 패널 모달 */
     #actionOverlay {
       display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
       background: rgba(0,0,0,0.92); z-index: 100; flex-direction: column;
@@ -86,24 +83,26 @@
 
     .view-panel {
       width: 100%; max-width: 350px; background: #ffffff; border-radius: 25px;
-      padding: 18px; display: flex; flex-direction: column; align-items: center;
+      padding: 20px; display: flex; flex-direction: column; align-items: center;
       box-shadow: 0 8px 25px rgba(0,0,0,0.6);
     }
     #actionTitle { font-size: 1.8rem; margin: 0 0 4px 0; color: #2f3542; font-weight: bold; }
-    #actionDesc { font-size: 0.95rem; margin: 0 0 12px 0; color: #747d8c; text-align: center; }
+    #actionDesc { font-size: 0.95rem; margin: 0 0 15px 0; color: #747d8c; text-align: center; }
 
-    /* 3D 뷰어: 자동 애니메이션 재생 + 방바닥 장난감 크기(30cm) 고정 */
-    model-viewer {
-      width: 100%; height: 230px; background: #f1f2f6; border-radius: 18px;
-      --poster-color: transparent; border: 2px solid #dfe4ea;
+    .preview-box {
+      width: 200px; height: 200px; border-radius: 20px; overflow: hidden;
+      background: #f1f2f6; border: 3px solid #00cec9; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      display: flex; align-items: center; justify-content: center;
     }
+    .preview-box img { width: 100%; height: 100%; object-fit: cover; }
 
     .ar-custom-btn {
-      margin-top: 15px; font-size: 1.25rem; font-weight: bold;
-      padding: 15px 20px; border-radius: 25px; border: none;
+      margin-top: 18px; font-size: 1.25rem; font-weight: bold;
+      padding: 16px 20px; border-radius: 25px; border: none;
       background: linear-gradient(135deg, #00cec9, #0984e3);
       color: #ffffff; cursor: pointer; width: 100%; max-width: 280px;
-      box-shadow: 0 4px 12px rgba(9, 132, 227, 0.35);
+      box-shadow: 0 4px 12px rgba(9, 132, 227, 0.35); text-decoration: none;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
     }
     .ar-custom-btn:active { transform: scale(0.96); }
 
@@ -114,7 +113,41 @@
     }
     .puzzle-btn:active { transform: scale(0.96); }
 
-    /* 5단계: 3x3 터치 드래그 퍼즐 모달 */
+    /* 실시간 카메라 AR 화면 (포켓몬 GO 모드) */
+    #cameraARView {
+      display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: #000; z-index: 200; touch-action: none;
+    }
+    #cameraVideo {
+      width: 100vw; height: 100vh; object-fit: cover;
+    }
+    #arCreature {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 180px; height: 180px;
+      cursor: grab;
+      filter: drop-shadow(0 15px 15px rgba(0,0,0,0.6));
+      animation: bobbing 2s infinite ease-in-out;
+    }
+    @keyframes bobbing {
+      0%, 100% { transform: translate(-50%, -50%) translateY(0px) scale(1); }
+      50% { transform: translate(-50%, -50%) translateY(-15px) scale(1.03); }
+    }
+    #arCreature img {
+      width: 100%; height: 100%; object-fit: contain; border-radius: 20px;
+    }
+    #closeCameraBtn {
+      position: absolute; top: 20px; right: 20px; z-index: 210;
+      font-size: 1.1rem; padding: 8px 18px; border-radius: 20px; border: none;
+      background: #ff4757; color: white; font-weight: bold; cursor: pointer;
+    }
+    .ar-guide-text {
+      position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+      background: rgba(0,0,0,0.7); color: #fff; padding: 10px 20px; border-radius: 20px;
+      font-size: 0.95rem; z-index: 210; pointer-events: none; width: max-content;
+    }
+
+    /* 3x3 터치 드래그 퍼즐 모달 */
     #puzzleOverlay {
       display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
       background: rgba(0, 0, 0, 0.92); z-index: 150; flex-direction: column;
@@ -176,7 +209,7 @@
     <main class="grid-container" id="cardGrid"></main>
   </div>
 
-  <!-- 4단계: 3D 뷰어 & AR 소환 패널 -->
+  <!-- 4단계: 선택 패널 모달 -->
   <div id="actionOverlay">
     <button id="closeOverlayBtn" onclick="closeOverlay()">✕ 닫기</button>
     
@@ -184,29 +217,26 @@
       <h2 id="actionTitle">동물 이름</h2>
       <p id="actionDesc"></p>
 
-      <!-- 
-        * scale="0.3 0.3 0.3": 기본 30cm 장난감 크기로 축소
-        * ar-scale="fixed": 실제 방바닥 소환 시 거대화 방지 
-        * autoplay animation-name="*": 살아있는 걷기/움직임 애니메이션 무한 재생
-      -->
-      <model-viewer id="viewer" 
-                    camera-controls touch-action="pan-y"
-                    autoplay animation-name="*"
-                    ar ar-modes="webxr scene-viewer quick-look" 
-                    ar-scale="fixed" ar-placement="floor"
-                    scale="0.3 0.3 0.3"
-                    shadow-intensity="1.2" exposure="1.0"
-                    interaction-prompt="none"
-                    src="" ios-src="">
-        <button slot="ar-button" id="realArBtn" style="display: none;"></button>
-      </model-viewer>
+      <div class="preview-box">
+        <img id="panelPreviewImg" src="" alt="">
+      </div>
 
-      <button class="ar-custom-btn" onclick="triggerAR()">📱 포켓몬GO처럼 방에 소환!</button>
+      <button class="ar-custom-btn" onclick="openCameraAR()">📱 포켓몬GO처럼 방에 소환!</button>
       <button class="puzzle-btn" onclick="startPuzzleFromPanel()">🧩 3x3 퍼즐 맞추기</button>
     </div>
   </div>
 
-  <!-- 5단계: 3x3 터치 드래그 퍼즐 모달 -->
+  <!-- 5단계: 실시간 카메라 AR 화면 (방바닥 소환) -->
+  <div id="cameraARView">
+    <button id="closeCameraBtn" onclick="closeCameraAR()">✕ 닫기</button>
+    <video id="cameraVideo" autoplay playsinline muted></video>
+    <div id="arCreature">
+      <img id="arCreatureImg" src="" alt="">
+    </div>
+    <div class="ar-guide-text">손가락으로 드래그해서 위치를 옮겨보세요!</div>
+  </div>
+
+  <!-- 6단계: 3x3 터치 드래그 퍼즐 모달 -->
   <div id="puzzleOverlay">
     <button id="closePuzzleBtn" onclick="closePuzzle()">✕ 닫기</button>
     <div class="puzzle-header">
@@ -221,33 +251,33 @@
     let selectedTerrain = '';
     let selectedCategory = '';
     let currentSelected = null;
+    let cameraStream = null;
 
-    // 움직이는 3D 애니메이션 모델(.glb, .usdz)과 사진 데이터
     const CREATURE_DATA = {
       'land-animal': [
-        { id: 'lion', name: '사자', file: 'lion.jpg', fallback: 'https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=400&h=400&fit=crop&q=80', emoji: '🦁', desc: '용맹하게 걷는 백수의 왕 사자!', glb: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb', usdz: 'https://modelviewer.dev/shared-assets/models/Astronaut.usdz' },
-        { id: 'tiger', name: '호랑이', file: 'tiger.jpg', fallback: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&h=400&fit=crop&q=80', emoji: '🐯', desc: '줄무늬가 멋진 호랑이 친구!', glb: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb', usdz: 'https://modelviewer.dev/shared-assets/models/Astronaut.usdz' },
-        { id: 'giraffe', name: '기린', file: 'giraffe.jpg', fallback: 'https://images.unsplash.com/photo-1538121669313-d150b4001ab9?w=400&h=400&fit=crop&q=80', emoji: '🦒', desc: '목이 아주 긴 기린 친구!', glb: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb', usdz: 'https://modelviewer.dev/shared-assets/models/Astronaut.usdz' },
-        { id: 'elephant', name: '코끼리', file: 'elephant.jpg', fallback: 'https://images.unsplash.com/photo-1557050543-4d5f4e07ef46?w=400&h=400&fit=crop&q=80', emoji: '🐘', desc: '코가 긴 듬직한 코끼리!', glb: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb', usdz: 'https://modelviewer.dev/shared-assets/models/Astronaut.usdz' },
-        { id: 'zebra', name: '얼룩말', file: 'zebra.jpg', fallback: 'https://images.unsplash.com/photo-1526095179574-86e545346ae6?w=400&h=400&fit=crop&q=80', emoji: '🦓', desc: '달리기를 잘하는 얼룩말!', glb: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb', usdz: 'https://modelviewer.dev/shared-assets/models/Astronaut.usdz' },
-        { id: 'panda', name: '판다', file: 'panda.jpg', fallback: 'https://images.unsplash.com/photo-1527118732049-c88155f2107c?w=400&h=400&fit=crop&q=80', emoji: '🐼', desc: '대나무를 좋아하는 귀여운 판다!', glb: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb', usdz: 'https://modelviewer.dev/shared-assets/models/Astronaut.usdz' }
+        { id: 'lion', name: '사자', file: 'lion.jpg', fallback: 'https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=400&h=400&fit=crop&q=80', emoji: '🦁', desc: '용맹한 백수의 왕 사자!' },
+        { id: 'tiger', name: '호랑이', file: 'tiger.jpg', fallback: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&h=400&fit=crop&q=80', emoji: '🐯', desc: '줄무늬가 멋진 호랑이 친구!' },
+        { id: 'giraffe', name: '기린', file: 'giraffe.jpg', fallback: 'https://images.unsplash.com/photo-1538121669313-d150b4001ab9?w=400&h=400&fit=crop&q=80', emoji: '🦒', desc: '목이 아주 긴 기린 친구!' },
+        { id: 'elephant', name: '코끼리', file: 'elephant.jpg', fallback: 'https://images.unsplash.com/photo-1557050543-4d5f4e07ef46?w=400&h=400&fit=crop&q=80', emoji: '🐘', desc: '코가 긴 듬직한 코끼리!' },
+        { id: 'zebra', name: '얼룩말', file: 'zebra.jpg', fallback: 'https://images.unsplash.com/photo-1526095179574-86e545346ae6?w=400&h=400&fit=crop&q=80', emoji: '🦓', desc: '달리기를 잘하는 얼룩말!' },
+        { id: 'panda', name: '판다', file: 'panda.jpg', fallback: 'https://images.unsplash.com/photo-1527118732049-c88155f2107c?w=400&h=400&fit=crop&q=80', emoji: '🐼', desc: '대나무를 좋아하는 귀여운 판다!' }
       ],
       'land-dino': [
-        { id: 'trex', name: '티라노사우루스', file: 'trex.jpg', fallback: 'https://images.unsplash.com/photo-1568832359672-e36cf5d74f54?w=400&h=400&fit=crop&q=80', emoji: '🦖', desc: '쿵쿵 걸어다니는 티라노사우루스!', glb: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb', usdz: 'https://modelviewer.dev/shared-assets/models/Astronaut.usdz' },
-        { id: 'trike', name: '트리케라톱스', file: 'trike.jpg', fallback: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&h=400&fit=crop&q=80', emoji: '🦏', desc: '뿔이 멋진 트리케라톱스!', glb: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb', usdz: 'https://modelviewer.dev/shared-assets/models/Astronaut.usdz' },
-        { id: 'brachio', name: '브라키오사우루스', file: 'brachio.jpg', fallback: 'https://images.unsplash.com/photo-1525869916826-972885c91c1e?w=400&h=400&fit=crop&q=80', emoji: '🦕', desc: '키가 아주 큰 브라키오사우루스!', glb: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb', usdz: 'https://modelviewer.dev/shared-assets/models/Astronaut.usdz' },
-        { id: 'stego', name: '스테고사우루스', file: 'stego.jpg', fallback: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=400&h=400&fit=crop&q=80', emoji: '🦎', desc: '등에 골판이 뾰족한 스테고사우루스!', glb: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb', usdz: 'https://modelviewer.dev/shared-assets/models/Astronaut.usdz' },
-        { id: 'ptera', name: '프테라노돈', file: 'ptera.jpg', fallback: 'https://images.unsplash.com/photo-1606857521015-7f9fcf423740?w=400&h=400&fit=crop&q=80', emoji: '🦅', desc: '하늘을 나는 멋진 프테라노돈!', glb: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb', usdz: 'https://modelviewer.dev/shared-assets/models/Astronaut.usdz' }
+        { id: 'trex', name: '티라노사우루스', file: 'trex.jpg', fallback: 'https://images.unsplash.com/photo-1568832359672-e36cf5d74f54?w=400&h=400&fit=crop&q=80', emoji: '🦖', desc: '공룡의 제왕 티라노사우루스!' },
+        { id: 'trike', name: '트리케라톱스', file: 'trike.jpg', fallback: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&h=400&fit=crop&q=80', emoji: '🦏', desc: '뿔이 멋진 트리케라톱스!' },
+        { id: 'brachio', name: '브라키오사우루스', file: 'brachio.jpg', fallback: 'https://images.unsplash.com/photo-1525869916826-972885c91c1e?w=400&h=400&fit=crop&q=80', emoji: '🦕', desc: '키가 아주 큰 브라키오사우루스!' },
+        { id: 'stego', name: '스테고사우루스', file: 'stego.jpg', fallback: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=400&h=400&fit=crop&q=80', emoji: '🦎', desc: '등에 골판이 뾰족한 스테고사우루스!' },
+        { id: 'ptera', name: '프테라노돈', file: 'ptera.jpg', fallback: 'https://images.unsplash.com/photo-1606857521015-7f9fcf423740?w=400&h=400&fit=crop&q=80', emoji: '🦅', desc: '하늘을 나는 멋진 프테라노돈!' }
       ],
       'sea-animal': [
-        { id: 'dolphin', name: '돌고래', file: 'dolphin.jpg', fallback: 'https://images.unsplash.com/photo-1607153333879-c174d265f1d2?w=400&h=400&fit=crop&q=80', emoji: '🐬', desc: '헤엄을 잘 치는 돌고래!', glb: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb', usdz: 'https://modelviewer.dev/shared-assets/models/Astronaut.usdz' },
-        { id: 'whale', name: '고래', file: 'whale.jpg', fallback: 'https://images.unsplash.com/photo-1568430467505-5925a74e5028?w=400&h=400&fit=crop&q=80', emoji: '🐳', desc: '바다에서 가장 큰 대왕고래!', glb: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb', usdz: 'https://modelviewer.dev/shared-assets/models/Astronaut.usdz' },
-        { id: 'shark', name: '상어', file: 'shark.jpg', fallback: 'https://images.unsplash.com/photo-1560275619-4662e36fa65c?w=400&h=400&fit=crop&q=80', emoji: '🦈', desc: '바다의 사냥꾼 백상아리!', glb: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb', usdz: 'https://modelviewer.dev/shared-assets/models/Astronaut.usdz' },
-        { id: 'turtle', name: '바다거북', file: 'turtle.jpg', fallback: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&h=400&fit=crop&q=80', emoji: '🐢', desc: '느릿느릿 귀여운 바다거북!', glb: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb', usdz: 'https://modelviewer.dev/shared-assets/models/Astronaut.usdz' }
+        { id: 'dolphin', name: '돌고래', file: 'dolphin.jpg', fallback: 'https://images.unsplash.com/photo-1607153333879-c174d265f1d2?w=400&h=400&fit=crop&q=80', emoji: '🐬', desc: '헤엄을 잘 치는 돌고래!' },
+        { id: 'whale', name: '고래', file: 'whale.jpg', fallback: 'https://images.unsplash.com/photo-1568430467505-5925a74e5028?w=400&h=400&fit=crop&q=80', emoji: '🐳', desc: '바다에서 가장 큰 대왕고래!' },
+        { id: 'shark', name: '상어', file: 'shark.jpg', fallback: 'https://images.unsplash.com/photo-1560275619-4662e36fa65c?w=400&h=400&fit=crop&q=80', emoji: '🦈', desc: '바다의 사냥꾼 백상아리!' },
+        { id: 'turtle', name: '바다거북', file: 'turtle.jpg', fallback: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&h=400&fit=crop&q=80', emoji: '🐢', desc: '느릿느릿 귀여운 바다거북!' }
       ],
       'sea-dino': [
-        { id: 'mosa', name: '모사사우루스', file: 'mosa.jpg', fallback: 'https://images.unsplash.com/photo-1570481662006-a3a1374699e8?w=400&h=400&fit=crop&q=80', emoji: '🐊', desc: '고대 바다의 최강자 모사사우루스!', glb: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb', usdz: 'https://modelviewer.dev/shared-assets/models/Astronaut.usdz' },
-        { id: 'plesio', name: '플레시오사우루스', file: 'plesio.jpg', fallback: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&h=400&fit=crop&q=80', emoji: '🦕', desc: '목이 긴 신비로운 플레시오사우루스!', glb: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb', usdz: 'https://modelviewer.dev/shared-assets/models/Astronaut.usdz' }
+        { id: 'mosa', name: '모사사우루스', file: 'mosa.jpg', fallback: 'https://images.unsplash.com/photo-1570481662006-a3a1374699e8?w=400&h=400&fit=crop&q=80', emoji: '🐊', desc: '고대 바다의 최강자 모사사우루스!' },
+        { id: 'plesio', name: '플레시오사우루스', file: 'plesio.jpg', fallback: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&h=400&fit=crop&q=80', emoji: '🦕', desc: '목이 긴 신비로운 플레시오사우루스!' }
       ]
     };
 
@@ -324,29 +354,66 @@
       document.getElementById('actionDesc').innerText = item.desc;
       speak(`${item.name}! ${item.desc}`);
 
-      const viewer = document.getElementById('viewer');
-      viewer.src = item.glb;
-      viewer.setAttribute('ios-src', item.usdz);
+      const photoUrl = activePhotoUrls[item.id] || item.fallback;
+      document.getElementById('panelPreviewImg').src = photoUrl;
 
       document.getElementById('actionOverlay').style.display = 'flex';
     }
 
-    function triggerAR() {
-      const viewer = document.getElementById('viewer');
-      if (viewer.canActivateAR) {
-        viewer.activateAR();
-      } else {
-        const realBtn = document.getElementById('realArBtn');
-        if (realBtn) realBtn.click();
+    function closeOverlay() {
+      document.getElementById('actionOverlay').style.display = 'none';
+    }
+
+    /* --- 실시간 카메라 AR 방바닥 소환 엔진 (포켓몬 GO 스타일) --- */
+    async function openCameraAR() {
+      document.getElementById('actionOverlay').style.display = 'none';
+      const arView = document.getElementById('cameraARView');
+      const video = document.getElementById('cameraVideo');
+      const creatureImg = document.getElementById('arCreatureImg');
+
+      creatureImg.src = activePhotoUrls[currentSelected.id] || currentSelected.fallback;
+      arView.style.display = 'block';
+
+      speak(`방바닥에 ${currentSelected.name} 소환 완료!`);
+
+      try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment' },
+          audio: false
+        });
+        video.srcObject = cameraStream;
+      } catch (err) {
+        alert('카메라 권한을 허용해주시면 방바닥 위에 소환됩니다!');
       }
     }
 
-    function closeOverlay() {
-      document.getElementById('actionOverlay').style.display = 'none';
-      const viewer = document.getElementById('viewer');
-      viewer.src = '';
-      viewer.removeAttribute('ios-src');
+    function closeCameraAR() {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream = null;
+      }
+      document.getElementById('cameraARView').style.display = 'none';
+      document.getElementById('actionOverlay').style.display = 'flex';
     }
+
+    // AR 동물 손가락 드래그 이동
+    const creatureEl = document.getElementById('arCreature');
+    let isArDragging = false;
+    let arStartX = 0, arStartY = 0;
+
+    creatureEl.addEventListener('touchstart', (e) => {
+      isArDragging = true;
+      arStartX = e.touches[0].clientX - creatureEl.offsetLeft;
+      arStartY = e.touches[0].clientY - creatureEl.offsetTop;
+    });
+
+    window.addEventListener('touchmove', (e) => {
+      if (!isArDragging) return;
+      creatureEl.style.left = `${e.touches[0].clientX - arStartX + creatureEl.offsetWidth/2}px`;
+      creatureEl.style.top = `${e.touches[0].clientY - arStartY + creatureEl.offsetHeight/2}px`;
+    });
+
+    window.addEventListener('touchend', () => { isArDragging = false; });
 
     function goToStart() {
       document.getElementById('listView').style.display = 'none';
@@ -368,7 +435,7 @@
       }
     }
 
-    /* --- 3x3 터치 드래그 퍼즐 엔진 --- */
+    /* --- 3x3 터치 드래그 퍼즐 --- */
     let positions = [];
     let isDragging = false;
     let dragEl = null;
